@@ -2,7 +2,11 @@ import User, {IUser} from "../models/userModel"
 import bcrypt from 'bcryptjs'
 import { Response, Request } from "express"
 import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie"
-import mongoose, { mongo } from "mongoose"
+import mongoose from "mongoose"
+
+interface AuthenticatedRequest extends Request{
+    user?:IUser | null
+}
 
 const signupUser = async(req:Request, res:Response): Promise<void> => {
     try {   
@@ -73,4 +77,58 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
     }
 }
 
-export {signupUser, signinUser}
+const signoutUser = async(req:Request, res:Response):Promise<void> => {
+    try {
+        res.cookie("token", "", { maxAge:1 })
+        res.status(200).json({ message:"User signed out successfully!" })
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message})
+        console.log("Error in signing out user:", (error as Error).message)
+    }
+}
+
+const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+    try {
+        const { id } = req.params;
+        const currentUserId = req.user?._id as mongoose.Types.ObjectId;
+        const targetId = new mongoose.Types.ObjectId(id);
+
+        if (currentUserId.equals(targetId)){
+            res.status(400).json({ message: "You cannot follow/unfollow yourself" });
+            return;
+        }
+
+        const [targetUser, currentUser] = await Promise.all([
+            User.findById(targetId),
+            User.findById(currentUserId)
+        ])
+
+        if (!currentUser || !targetUser) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        if (currentUser.following?.includes(targetId)) {
+            // Unfollow
+            await Promise.all([
+                User.findByIdAndUpdate(currentUserId, { $pull: { following: targetId } }),
+                User.findByIdAndUpdate(targetId, { $pull: { followers: currentUserId } })
+            ]);
+            res.status(200).json({ message: "Unfollowed successfully" });
+        } 
+        else {
+            // Follow
+            await Promise.all([
+                User.findByIdAndUpdate(currentUserId, { $push: { following: targetId } }),
+                User.findByIdAndUpdate(targetId, { $push: { followers: currentUserId } })
+            ]);
+            res.status(200).json({ message: "Followed successfully" });
+        }
+
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+        console.log("Error in follow/unfollow user:", (error as Error).message);
+    }
+}
+
+export {signupUser, signinUser, signoutUser, followUnfollowUser}
