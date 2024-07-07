@@ -8,6 +8,27 @@ interface AuthenticatedRequest extends Request{
     user?:IUser | null
 }
 
+const checkAvailability = async(req:Request, res:Response) => {
+    const { userName, email } = req.query;
+
+    try {
+
+        const response:{ userNameAvailable?:boolean, emailAvailable?: boolean } = {}
+        if(userName){
+            const userNameExists = await User.findOne({ userName })
+            response.userNameAvailable = !userNameExists
+        }
+        if(email){
+            const emailExists = await User.findOne({ email })
+            response.emailAvailable = !emailExists
+        }
+        res.status(201).json(response);
+
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+    }
+}
+
 const signupUser = async(req:Request, res:Response): Promise<void> => {
     try {   
         const { name, email, userName, password } = req.body
@@ -64,7 +85,7 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
 
         generateTokenAndSetCookie(user._id as mongoose.Schema.Types.ObjectId, res)
 
-        res.status(200).json({
+        res.status(201).json({
             _id:user._id,
             name:user.name,
             email:user.email,
@@ -80,7 +101,7 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
 const signoutUser = async(req:Request, res:Response):Promise<void> => {
     try {
         res.cookie("token", "", { maxAge:1 })
-        res.status(200).json({ message:"User signed out successfully!" })
+        res.status(201).json({ message:"User signed out successfully!" })
     } catch (error) {
         res.status(500).json({ message: (error as Error).message})
         console.log("Error in signing out user:", (error as Error).message)
@@ -114,7 +135,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
                 User.findByIdAndUpdate(currentUserId, { $pull: { following: targetId } }),
                 User.findByIdAndUpdate(targetId, { $pull: { followers: currentUserId } })
             ]);
-            res.status(200).json({ message: "Unfollowed successfully" });
+            res.status(201).json({ message: "Unfollowed successfully" });
         } 
         else {
             // Follow
@@ -122,7 +143,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
                 User.findByIdAndUpdate(currentUserId, { $push: { following: targetId } }),
                 User.findByIdAndUpdate(targetId, { $push: { followers: currentUserId } })
             ]);
-            res.status(200).json({ message: "Followed successfully" });
+            res.status(201).json({ message: "Followed successfully" });
         }
 
     } catch (error) {
@@ -131,4 +152,72 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
     }
 }
 
-export {signupUser, signinUser, signoutUser, followUnfollowUser}
+const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+    const {name, email, userName, password, profilePic, bio} = req.body
+    if(!req.user){
+        res.status(401).json({ message:"Unauthorized"})
+        return;
+    }
+    const userId = req.user?._id
+    try {
+        let user = await User.findById(userId)
+        if(!user){
+            res.status(404).json({ message:"User not found" })
+            return;
+        }
+
+        if (name) user.name = name;
+
+        if(password){
+            const salt = await bcrypt.genSalt(10);
+            const hashPassword = await bcrypt.hash(password, salt);
+            user.password = hashPassword
+        }
+
+        if(email){
+            const existingUserWithEmail = await User.findOne({ email })
+            if(existingUserWithEmail){
+                res.status(400).json({ message:"Email already taken"})
+                return;
+            }
+            user.email = email;
+        }
+
+        if(userName){
+            const existingUserWithUserName = await User.findOne({ userName })
+            if(existingUserWithUserName){
+                res.status(400).json({ message:"Username already taken" })
+                return;
+            }
+            user.userName = userName;
+        }
+
+        if (profilePic) user.profilePic = profilePic;
+        if (bio) user.bio = bio;
+
+        const savedUser = await user.save()
+
+        res.status(201).json({ message:"Profile updated successfully", user: savedUser})
+
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+        console.log("Error in updating user:", (error as Error).message);
+    }
+}
+
+const getUserProfile = async(req:Request, res:Response):Promise<void> => {
+    const { userName } = req.params;
+    try {
+        const user = await User.findOne({ userName }).select("-password").select('-updatedAt')
+        if(!user){
+            res.status(404).json({ message:"User not found" })
+            return;
+        }
+        res.status(201).json({ user:user })
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+        console.log("Error in updating user:", (error as Error).message);
+    }
+}
+
+export {signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile}
