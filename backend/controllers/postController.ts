@@ -45,4 +45,42 @@ const createPost = async(req:AuthenticatedRequest, res:Response):Promise<void> =
     }
 }
 
-export {createPost}
+const getPost = async(req:Request, res:Response):Promise<void> => {
+    const { id } = req.params 
+    try {
+        const post = await Post.findById(id)  
+        if(!post){
+            res.status(404).json({ message:"Post not found" });
+            return;
+        }      
+
+        res.status(200).json({ post })
+
+    } catch (error) {
+        res.status(500).json({ message:(error as Error).message});
+    }
+}
+
+const deletePost = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+    const { id } = req.params;
+    try {
+        const post = await Post.findById(id);
+        if(!post){
+            res.status(404).json({ message:"Post not found" })
+            return;
+        }
+
+        if(post?.postedBy !== req.user?._id){
+            res.status(500).json({ message:"Unauthorized to delete the post"})
+            return;
+        }
+
+        await Post.findByIdAndDelete(id)
+        res.status(200).json({ message:"Post deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message:(error as Error).message});
+    }
+}  
+
+export {createPost, getPost, deletePost}

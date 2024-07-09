@@ -9,6 +9,8 @@ export interface IUser extends Document {
     followers?: mongoose.Types.ObjectId[];
     following?: mongoose.Types.ObjectId[];
     bio?: string;
+    resetPasswordToken?:string;
+    resetPasswordExpires?:Date;
 }
 
 const userSchema: Schema = new mongoose.Schema({
@@ -52,6 +54,12 @@ const userSchema: Schema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    resetPasswordToken:{
+        type:String,
+    },
+    resetPasswordExpires:{
+        type:Date,
+    }
 }, { timestamps: true });
 
 

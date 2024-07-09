@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs'
 import { Response, Request } from "express"
 import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie"
 import mongoose from "mongoose"
+import crypto from 'crypto'
+import { sendEmail } from "../utils/sendEmail"
 
 interface AuthenticatedRequest extends Request{
     user?:IUser | null
@@ -159,6 +161,12 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         return;
     }
     const userId = req.user?._id
+
+    if(!userId){
+        res.status(400).json({ message:"Unauthorized" })
+        return;
+    }
+    
     try {
         let user = await User.findById(userId)
         if(!user){
@@ -205,6 +213,72 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
     }
 }
 
+const forgotPassword = async(req:Request, res:Response):Promise<void> => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email })
+        if(!user){
+            res.status(404).json({ message:"User not found" })
+            return;
+        }
+        const token = crypto.randomBytes(32).toString('hex')
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = new Date(Date.now() + 3600000)
+        await user.save();
+
+        const resetUrl = `http://${req.headers.host}/reset-password/${token}`;
+
+        await sendEmail({
+            fromEmail: 'giri28may@gmail.com',
+            fromName: 'Girinath Chandrakumar',
+            toEmail: user.email,
+            toName: user.name,
+            subject: 'Password Reset Request',
+            textPart: `You requested a password reset. Please use the following link to reset your password: ${resetUrl}`,
+            htmlPart: `<p>You requested a password reset. Please use the following link to reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
+            customId: 'PasswordResetRequest'
+        });
+
+        res.status(200).json({ message:"Password reset email sent" })
+
+    } catch (error) {
+        res.send(500).json({message:(error as Error).message});
+        console.error("Error :", error);
+    }
+}
+
+const resetPassword = async(req:Request, res:Response):Promise<void> => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    try {
+        const user = await User.findOne({ 
+            resetPasswordToken:token,
+            resetPasswordExpires:{ $gt:Date.now() }
+        });
+
+        if(!user){
+            res.status(400).json({ message:"Password reset is invalid or has expired" })
+            return;
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash(newPassword, salt);
+        user.password = hashPassword;
+
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        res.status(200).json({ message:"Password has been reset" })
+    
+    } catch (error) {
+        res.send(500).json({message:(error as Error).message});
+        console.error("Error :", error);
+    }
+}
+
 const getUserProfile = async(req:Request, res:Response):Promise<void> => {
     const { userName } = req.params;
     try {
@@ -220,4 +294,4 @@ const getUserProfile = async(req:Request, res:Response):Promise<void> => {
     }
 }
 
-export {signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile}
+export {signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile, forgotPassword, resetPassword}
