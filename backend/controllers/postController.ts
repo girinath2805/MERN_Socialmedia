@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../models/userModel";
-import mongoose from "mongoose";
-import Post from "../models/postModel";
+import mongoose, { mongo } from "mongoose";
+import Post, { IReply } from "../models/postModel";
 
 interface AuthenticatedRequest extends Request{
     user?:IUser | null
@@ -76,11 +76,87 @@ const deletePost = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         }
 
         await Post.findByIdAndDelete(id)
-        res.status(200).json({ message:"Post deleted successfully" });
+        res.status(201).json({ message:"Post deleted successfully" });
 
     } catch (error) {
         res.status(500).json({ message:(error as Error).message});
     }
 }  
 
-export {createPost, getPost, deletePost}
+const likeUnlikePost = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+
+    const { id } = req.params;
+    const postId = new mongoose.Types.ObjectId(id);
+
+    try {
+        const userId = req.user?._id as mongoose.Schema.Types.ObjectId
+        const post = await Post.findById(id);
+        if(!post){
+            res.status(404).json({ message:"Post not found" });
+            return;
+        }
+
+        const userLikedPost = post.likes.includes(userId)
+        if(userLikedPost){
+            await Post.updateOne(postId, {$pull:{likes:userId}});
+            res.status(201).json({ message:"Post unliked sucessfully" })
+        }
+        else{
+            await Post.updateOne(postId, {$push:{likes:userId}});
+            res.status(201).json({ message:"Post liked sucessfully" })
+        }
+
+    } catch (error) {
+        res.status(500).json({ message:(error as Error).message});
+    }
+}
+
+const replyToPost = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+
+    const { id } = req.params;
+    const { text } = req.body;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+    const userProfilePic = req.user?.profilePic;
+    const userName = req.user?.userName;
+    
+    try {
+        if(text.length === 0){
+            res.status(400).json({message:"Text field is required"})
+            return;
+        }
+        const post = await Post.findById(id);
+        if(!post){
+            res.status(404).json({ message:"Post not found"})
+            return;
+        }
+
+        const reply:IReply = {userId, text, userProfilePic, userName};
+        post.replies.push(reply)
+        await post.save()
+        res.status(201).json({ message:"Reply added successfully", post });
+        
+    } catch (error) {
+        res.status(500).json({ message:(error as Error).message});
+    }
+}
+
+const getFeedPosts = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+    try {
+        const userId = req.user?._id;
+        const user = await User.findById(userId);
+        if(!user){
+            res.status(404).json({ message:"User not found" });
+            return;
+        }
+
+        const following = user.following;
+
+        const feedPosts = await Post.find({ postedBy:{ $in:following } }).sort({ createdAt: -1}).exec()
+        res.status(200).json({ feedPosts })
+
+    } catch (error) {
+        res.status(500).json({ message:(error as Error).message});
+    }
+}
+
+export {createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts}

@@ -11,23 +11,15 @@ interface AuthenticatedRequest extends Request{
 }
 
 const checkAvailability = async(req:Request, res:Response) => {
-    const { userName, email } = req.query;
+    const { userName } = req.query;
 
     try {
-
-        const response:{ userNameAvailable?:boolean, emailAvailable?: boolean } = {}
-        if(userName){
-            const userNameExists = await User.findOne({ userName })
-            response.userNameAvailable = !userNameExists
-        }
-        if(email){
-            const emailExists = await User.findOne({ email })
-            response.emailAvailable = !emailExists
-        }
-        res.status(201).json(response);
+        const userNameExists = await User.findOne({ userName })
+        const userNameAvailable:boolean = !userNameExists
+        res.status(200).json({ userNameAvailable });
 
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message });
+        res.status(500).json({ error: (error as Error).message });
     }
 }
 
@@ -37,7 +29,7 @@ const signupUser = async(req:Request, res:Response): Promise<void> => {
 
         const user = await User.findOne({ $or:[{email}, {userName}] })
         if(user) {
-            res.status(400).json({ message:"User already exists"})
+            res.status(400).json({ error:"User already exists with the email or username"})
             return;
         }
 
@@ -61,10 +53,10 @@ const signupUser = async(req:Request, res:Response): Promise<void> => {
             })
         }
         else{
-            res.status(400).json({message: "Invalid user data"})
+            res.status(400).json({error: "Invalid user data"})
         }
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message})
         console.log("Error in signup user:", (error as Error).message)
     }
 }
@@ -75,13 +67,13 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
         const { userName, password } = req.body
         const user = await User.findOne({ userName })
         if(!user){
-            res.status(404).json({ message: "Username doesn't exist"})
+            res.status(404).json({ error: "Username doesn't exist"})
             return
         }
         const isPasswordCorrect = await bcrypt.compare(password, user?.password)
 
         if(!isPasswordCorrect) {
-            res.status(401).json({ message: "Invalid credentials"})
+            res.status(401).json({ error: "Invalid credentials"})
             return
         }
 
@@ -95,7 +87,7 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
         })
 
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message})
         console.error("Error signing in user :", error)
     }
 }
@@ -105,7 +97,7 @@ const signoutUser = async(req:Request, res:Response):Promise<void> => {
         res.cookie("token", "", { maxAge:1 })
         res.status(201).json({ message:"User signed out successfully!" })
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message})
         console.log("Error in signing out user:", (error as Error).message)
     }
 }
@@ -117,7 +109,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
         const targetId = new mongoose.Types.ObjectId(id);
 
         if (currentUserId.equals(targetId)){
-            res.status(400).json({ message: "You cannot follow/unfollow yourself" });
+            res.status(400).json({ error: "You cannot follow/unfollow yourself" });
             return;
         }
 
@@ -127,7 +119,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
         ])
 
         if (!currentUser || !targetUser) {
-            res.status(404).json({ message: "User not found" });
+            res.status(404).json({ error: "User not found" });
             return;
         }
 
@@ -149,7 +141,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
         }
 
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message });
+        res.status(500).json({ error: (error as Error).message });
         console.log("Error in follow/unfollow user:", (error as Error).message);
     }
 }
@@ -163,14 +155,14 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
     const userId = req.user?._id
 
     if(!userId){
-        res.status(400).json({ message:"Unauthorized" })
+        res.status(400).json({ error:"Unauthorized" })
         return;
     }
     
     try {
         let user = await User.findById(userId)
         if(!user){
-            res.status(404).json({ message:"User not found" })
+            res.status(404).json({ error:"User not found" })
             return;
         }
 
@@ -185,7 +177,7 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         if(email){
             const existingUserWithEmail = await User.findOne({ email })
             if(existingUserWithEmail){
-                res.status(400).json({ message:"Email already taken"})
+                res.status(400).json({ error:"Email already taken"})
                 return;
             }
             user.email = email;
@@ -194,7 +186,7 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         if(userName){
             const existingUserWithUserName = await User.findOne({ userName })
             if(existingUserWithUserName){
-                res.status(400).json({ message:"Username already taken" })
+                res.status(400).json({ error:"Username already taken" })
                 return;
             }
             user.userName = userName;
@@ -208,7 +200,7 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         res.status(201).json({ message:"Profile updated successfully", user: savedUser})
 
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message });
+        res.status(500).json({ error: (error as Error).message });
         console.log("Error in updating user:", (error as Error).message);
     }
 }
@@ -218,7 +210,7 @@ const forgotPassword = async(req:Request, res:Response):Promise<void> => {
     try {
         const user = await User.findOne({ email })
         if(!user){
-            res.status(404).json({ message:"User not found" })
+            res.status(404).json({ error:"User not found" })
             return;
         }
         const token = crypto.randomBytes(32).toString('hex')
@@ -239,26 +231,26 @@ const forgotPassword = async(req:Request, res:Response):Promise<void> => {
             customId: 'PasswordResetRequest'
         });
 
-        res.status(200).json({ message:"Password reset email sent" })
+        res.status(201).json({ message:"Password reset email sent" })
 
     } catch (error) {
-        res.send(500).json({message:(error as Error).message});
+        res.send(500).json({error:(error as Error).message});
         console.error("Error :", error);
     }
 }
 
-const resetPassword = async(req:Request, res:Response):Promise<void> => {
+const resetPassword = async (req: Request, res: Response): Promise<void> => {
     const { token } = req.params;
     const { newPassword } = req.body;
 
     try {
-        const user = await User.findOne({ 
-            resetPasswordToken:token,
-            resetPasswordExpires:{ $gt:Date.now() }
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
         });
 
-        if(!user){
-            res.status(400).json({ message:"Password reset is invalid or has expired" })
+        if (!user) {
+            res.status(400).json({ error: "Password reset is invalid or has expired" });
             return;
         }
 
@@ -271,25 +263,25 @@ const resetPassword = async(req:Request, res:Response):Promise<void> => {
 
         await user.save();
 
-        res.status(200).json({ message:"Password has been reset" })
-    
+        res.status(201).json({ message: "Password has been reset" });
+
     } catch (error) {
-        res.send(500).json({message:(error as Error).message});
-        console.error("Error :", error);
+        res.status(500).json({ error: (error as Error).message });
+        console.error("Error:", error);
     }
-}
+};
 
 const getUserProfile = async(req:Request, res:Response):Promise<void> => {
     const { userName } = req.params;
     try {
         const user = await User.findOne({ userName }).select("-password").select('-updatedAt')
         if(!user){
-            res.status(404).json({ message:"User not found" })
+            res.status(404).json({ error:"User not found" })
             return;
         }
-        res.status(201).json({ user:user })
+        res.status(200).json({ user:user })
     } catch (error) {
-        res.status(500).json({ message: (error as Error).message });
+        res.status(500).json({ error: (error as Error).message });
         console.log("Error in updating user:", (error as Error).message);
     }
 }

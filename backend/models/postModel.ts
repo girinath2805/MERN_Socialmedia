@@ -1,14 +1,14 @@
 import mongoose, {Schema, Document, mongo} from "mongoose";
 
-interface IReply{
-    userId:string,
+export interface IReply{
+    userId:mongoose.Types.ObjectId,
     text:string,
     userProfilePic?:string,
     userName?:string,
 }
 
-interface IPost extends Document{
-    postedBy:mongoose.Schema.Types.ObjectId,
+export interface IPost extends Document{
+    postedBy:mongoose.Types.ObjectId,
     text?:string,
     img?:string,
     likes:mongoose.Schema.Types.ObjectId[],
@@ -17,7 +17,7 @@ interface IPost extends Document{
 
 const replySchema = new mongoose.Schema({
     userId:{
-        type:String,
+        type:mongoose.Schema.Types.ObjectId,
         ref:'User',
         required:true,
     },
