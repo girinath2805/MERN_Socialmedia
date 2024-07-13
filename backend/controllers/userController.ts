@@ -5,6 +5,7 @@ import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie"
 import mongoose from "mongoose"
 import crypto from 'crypto'
 import { sendEmail } from "../utils/sendEmail"
+import uploadProfilePic from './../utils/uploadProfilePic';
 
 interface AuthenticatedRequest extends Request{
     user?:IUser | null
@@ -50,6 +51,8 @@ const signupUser = async(req:Request, res:Response): Promise<void> => {
                 name:savedUser.name,
                 email:savedUser.email,
                 userName:savedUser.userName,  
+                bio:savedUser.bio,
+                profilePic:savedUser.profilePic,
             })
         }
         else{
@@ -84,6 +87,8 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
             name:user.name,
             email:user.email,
             userName:user.userName,
+            bio:user.bio,
+            profilePic:user.profilePic,
         })
 
     } catch (error) {
@@ -147,12 +152,14 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
 }
 
 const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
-    const {name, email, userName, password, profilePic, bio} = req.body
+    const {name, email, userName, password, bio} = req.body
+    const profilePic = req.file;
+    
     if(!req.user){
-        res.status(401).json({ message:"Unauthorized"})
+        res.status(401).json({ error:"Unauthorized"})
         return;
     }
-    const userId = req.user?._id
+    const userId = req.user?._id as mongoose.Types.ObjectId
 
     if(!userId){
         res.status(400).json({ error:"Unauthorized" })
@@ -176,7 +183,7 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
 
         if(email){
             const existingUserWithEmail = await User.findOne({ email })
-            if(existingUserWithEmail){
+            if(existingUserWithEmail && !userId.equals(existingUserWithEmail._id as mongoose.Types.ObjectId)){
                 res.status(400).json({ error:"Email already taken"})
                 return;
             }
@@ -185,19 +192,22 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
 
         if(userName){
             const existingUserWithUserName = await User.findOne({ userName })
-            if(existingUserWithUserName){
+            if(existingUserWithUserName && !userId.equals(existingUserWithUserName._id as mongoose.Types.ObjectId)){
                 res.status(400).json({ error:"Username already taken" })
                 return;
             }
             user.userName = userName;
         }
 
-        if (profilePic) user.profilePic = profilePic;
+        if(profilePic){
+            user.profilePic = await uploadProfilePic(profilePic)
+        }
+
         if (bio) user.bio = bio;
 
         const savedUser = await user.save()
 
-        res.status(201).json({ message:"Profile updated successfully", user: savedUser})
+        res.status(201).json({ user: savedUser })
 
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });

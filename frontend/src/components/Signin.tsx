@@ -65,7 +65,7 @@ const Signin = () => {
         })
       } else {
         console.log(response.data);
-        localStorage.setItem("user-threads", response.data);
+        localStorage.setItem("user-threads", JSON.stringify(response.data));
         setUser(response.data)
       }
 
