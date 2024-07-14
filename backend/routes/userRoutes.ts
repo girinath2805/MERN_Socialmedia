@@ -1,7 +1,7 @@
 import express from 'express'
 import { signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile, forgotPassword, resetPassword } from '../controllers/userController'
 import protectRoute from '../middlewares/protectRoute'
-import { upload } from './../utils/uploadProfilePic';
+import { upload } from '../utils/uploadToS3';
 
 const router = express.Router()
 

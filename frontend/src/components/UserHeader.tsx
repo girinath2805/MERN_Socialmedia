@@ -1,26 +1,95 @@
-import { Avatar, Box, Flex, Link, Menu, MenuButton, MenuItem, MenuList, Portal, Text, VStack, useToast } from "@chakra-ui/react"
+import { Avatar, Box, Button, Flex, Link, Menu, MenuButton, MenuItem, MenuList, Portal, Text, useColorModeValue, VStack } from "@chakra-ui/react"
 import { BsInstagram } from "react-icons/bs"
 import { CgMoreO } from "react-icons/cg"
+import { IUser } from "../pages/UserPage"
+import { useRecoilValue } from "recoil"
+import userAtom from "../atoms/userAtom"
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { AiOutlineUser } from "react-icons/ai"
+import { useState } from "react"
+import axios from "axios"
+import useShowToast from "../hooks/UseShowToast"
 
-const UserHeader = () => {
 
-  const toast = useToast()
+const UserHeader = ({ user}:{ user:IUser | null}) => {
 
+  const navigate = useNavigate()
+  const { showToast }  = useShowToast()
+  const currentUser = useRecoilValue(userAtom) 
+  const [following, setFollowing] = useState(currentUser ? user?.followers.includes(currentUser._id) : false)
+  const [isLoading, setIsLoading ] = useState<boolean>(false)
   const copyURL = () => {
     const currentURL = window.location.href
     navigator.clipboard.writeText(currentURL).then(() => {
-      toast({description:"Copied to Clipboard", status:"success", duration:2500, isClosable:true})
+      showToast({
+        description:"Copied to Clipboard", 
+        status:"success"
+      })
     })
   }
+
+  const handleFollow = async() => {
+
+    if(!currentUser){
+      showToast({
+        description:"Signin to continue",
+        status:"info",
+      })
+      setTimeout(() => {
+        navigate('/auth')
+      })
+      return;
+    }
+    setIsLoading(true)
+    try {
+      const response = await axios.post(`/api/users/follow/${user?._id}`)
+
+      if (response.data.error) {
+        showToast({
+          title: 'Error',
+          description: response.data.error,
+          status: 'error',
+        });
+      } else {
+        if(following){
+          showToast({description:`Unfollowed ${user?.name}`, status:"success"})
+          user?.followers.pop()
+        }
+        else{
+          showToast({ description:`Following ${user?.name}`, status:"success"})
+          user?.followers.push(currentUser?._id)
+        }
+        setFollowing(!following)
+      }
+
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        showToast({
+          title: 'Error',
+          description: error.response.data.error,
+          status: 'error',
+        });
+      } else {
+        showToast({
+          title: 'Error',
+          description: 'An error occurred while getting user profile. Please try again.',
+          status: 'error',
+        });
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <VStack gap={4} alignItems={'start'}>
         <Flex justifyContent={'space-between'} w={'full'}>
           <Box>
             <Text fontSize={'2xl'} fontWeight={'bold'}>
-              Mark Zuckerberg
+              {user?.name}
             </Text>
             <Flex gap={2} alignItems={'center'}>
-              <Text fontSize={'sm'}>Mark Zuckerberg</Text>
+              <Text fontSize={'sm'}>{ user?.userName }</Text>
               <Text
               fontSize={'xs'}
               bg={"gray.dark"}
@@ -33,7 +102,7 @@ const UserHeader = () => {
             </Flex>
           </Box>
           <Box>
-            <Avatar name='Mark Zuckerberg' src="/zuck-avatar.png" size={
+            <Avatar src={user?.profilePic} bg={useColorModeValue("", "")} icon={!user?.profilePic ? <AiOutlineUser color={useColorModeValue("black","white")}/> : <></>} size={
               {
                 base:"lg",
                 md:"xl",
@@ -42,11 +111,18 @@ const UserHeader = () => {
           </Box>
         </Flex>
         <Text>
-          Co-founder, executive chairman and CEO of Meta Platform.
+          {user?.bio}
         </Text>
+        {currentUser?._id === user?._id ? (
+          <Link as={RouterLink} to="/update">
+          <Button size={'sm'}>Edit</Button>
+          </Link>
+        ) : (
+          <Button size={'sm'} isLoading={isLoading} onClick={handleFollow}>{ following ? "Unfollow " : "Follow" }</Button>
+        )}
         <Flex w={'full'} justifyContent={'space-between'}>
           <Flex gap={2} alignItems={'center'}>
-            <Text color={"gray.light"}>3.2K followers</Text>
+            <Text color={"gray.light"}>{user?.followers.length} followers</Text>
             <Box w={1} h={1} bg={"gray.light"} borderRadius={"full"}></Box>
             <Link color={"gray.light"}>instagram.com</Link>
           </Flex>

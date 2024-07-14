@@ -7,8 +7,6 @@ import {
   Input,
   Stack,
   useColorModeValue,
-  HStack,
-  Link,
   FormErrorMessage
 } from '@chakra-ui/react';
 import axios from 'axios';

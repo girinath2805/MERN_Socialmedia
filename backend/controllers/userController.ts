@@ -5,7 +5,8 @@ import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie"
 import mongoose from "mongoose"
 import crypto from 'crypto'
 import { sendEmail } from "../utils/sendEmail"
-import uploadProfilePic from './../utils/uploadProfilePic';
+import getCloudFrontSignedUrl from "../utils/getSignedUrl"
+import uploadToS3 from "../utils/uploadToS3"
 
 interface AuthenticatedRequest extends Request{
     user?:IUser | null
@@ -82,13 +83,14 @@ const signinUser = async(req:Request, res:Response):Promise<void> => {
 
         generateTokenAndSetCookie(user._id as mongoose.Schema.Types.ObjectId, res)
 
+
         res.status(201).json({
             _id:user._id,
             name:user.name,
             email:user.email,
             userName:user.userName,
             bio:user.bio,
-            profilePic:user.profilePic,
+            profilePic:user.profilePic ? getCloudFrontSignedUrl(user.profilePic, 360) : "",
         })
 
     } catch (error) {
@@ -200,13 +202,16 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         }
 
         if(profilePic){
-            user.profilePic = await uploadProfilePic(profilePic)
+            user.profilePic = await uploadToS3(profilePic, 'profile-pics')
         }
 
-        if (bio) user.bio = bio;
+        user.bio = bio;
 
         const savedUser = await user.save()
-
+        savedUser.password = ""
+        if(savedUser.profilePic){
+            savedUser.profilePic = getCloudFrontSignedUrl(savedUser.profilePic, 360)
+        }
         res.status(201).json({ user: savedUser })
 
     } catch (error) {
@@ -284,15 +289,18 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
 const getUserProfile = async(req:Request, res:Response):Promise<void> => {
     const { userName } = req.params;
     try {
-        const user = await User.findOne({ userName }).select("-password").select('-updatedAt')
+        const user = await User.findOne({ userName }).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
         if(!user){
             res.status(404).json({ error:"User not found" })
             return;
         }
+        if(user.profilePic){
+            user.profilePic = getCloudFrontSignedUrl(user.profilePic, 1)
+        }
         res.status(200).json({ user:user })
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
-        console.log("Error in updating user:", (error as Error).message);
+        console.log("Error in getting user:", (error as Error).message);
     }
 }
 

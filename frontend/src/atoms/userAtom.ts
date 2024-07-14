@@ -2,12 +2,12 @@
 import { atom } from 'recoil';
 
 export interface User {
-  _id?: string;
-  userName?: string;
-  name?: string;
-  email?: string;
-  bio?: string;
-  profilePic?: string;
+  _id: string;
+  userName: string;
+  name: string;
+  email: string;
+  bio: string;
+  profilePic: string;
 }
 
 const getUserFromLocalStorage = (): User | null => {

@@ -28,6 +28,7 @@ const UpdateProfilePage = () => {
   const { showToast } = useShowToast();
   const [user, setUser] = useRecoilState<User | null>(userAtom);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [inputs, setInputs] = useState<Inputs>({
     userName: user?.userName,
     name: user?.name,
@@ -38,7 +39,7 @@ const UpdateProfilePage = () => {
   });
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const { handleImgChange, imgUrl, file } = UsePreviewImg();
+  const { handleImgChange, imgUrl, file, setImgUrl, setFile, } = UsePreviewImg();
 
   const handleUpdateProfile = async () => {
     const formData = new FormData();
@@ -53,18 +54,34 @@ const UpdateProfilePage = () => {
       formData.append("profilePic", file);
     }
 
+    setIsLoading(true)
+
     try {
       const response = await axios.put('/api/users/update', formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      setUser(response.data.user);
-      localStorage.setItem("user-threads", JSON.stringify(response.data.user));
-      showToast({
-        description: 'Profile updated successfully',
-        status: 'success',
-      });
+      if (response.data.error) {
+        showToast({
+          title: "Error",
+          description: response.data.error,
+          status: "error",
+        })
+      } else {
+        setUser(response.data.user);
+        localStorage.setItem("user-threads", JSON.stringify(response.data.user));
+        showToast({
+          description: 'Profile updated successfully',
+          status: 'success',
+        });
+        setImgUrl("")
+        setFile(null)
+        setInputs({
+          ...inputs,
+          profilePic: response.data.user.profilePic
+        })
+      }
 
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -80,6 +97,8 @@ const UpdateProfilePage = () => {
           status: 'error',
         });
       }
+    } finally {
+      setIsLoading(false)
     }
   };
 
@@ -97,7 +116,7 @@ const UpdateProfilePage = () => {
         boxShadow={'lg'}
         p={6}>
         <Heading lineHeight={1.1} fontSize={{ base: '2xl', sm: '3xl' }}>
-          User Profile Edit
+          Edit Profile
         </Heading>
         <FormControl>
           <Stack direction={['column', 'row']} spacing={6}>
@@ -179,6 +198,7 @@ const UpdateProfilePage = () => {
             Cancel
           </Button>
           <Button
+            isLoading={isLoading}
             onClick={handleUpdateProfile}
             bg={'green.500'}
             color={'white'}

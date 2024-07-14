@@ -1,5 +1,5 @@
-import { Container } from "@chakra-ui/react"
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Button, Container, useColorModeValue } from "@chakra-ui/react"
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import UserPage from './pages/UserPage';
 import PostPage from "./pages/PostPage";
 import Header from "./components/Header";
@@ -10,9 +10,15 @@ import HomePage from "./pages/HomePage";
 import LogoutButton from "./components/LogoutButton";
 import ResetPassword from "./pages/ResetPassword";
 import UpdateProfilePage from "./pages/UpdateProfilePage";
+import CreatePost from "./pages/CreatePost";
 
 const App = () => {
   const user = useRecoilValue(userAtom);
+  const navigate = useNavigate()
+
+  const navigateToSignin = () => {
+    navigate('/auth');
+  }
 
   return (
     <Container maxW='620px'>
@@ -25,7 +31,23 @@ const App = () => {
         <Route path="/:username" element={<UserPage/>}/>
         <Route path="/:username/posts/:pid" element={<PostPage/>}/>
       </Routes>
-      {user && <LogoutButton/>}
+      {user ? (
+        <LogoutButton/>
+        ) : (
+          <Button
+          position={"fixed"}
+          top={"30px"}
+          right={"30px"}
+          size={"sm"}
+          onClick={navigateToSignin}
+          bg={useColorModeValue('','')}
+          _hover={{color:useColorModeValue("white","black"),
+            bg:useColorModeValue('black','white')}}
+        >
+          Signin
+        </Button>
+        )}
+        {user && <CreatePost />}
     </Container>
   )
 }
