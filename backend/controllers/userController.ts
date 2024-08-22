@@ -287,9 +287,15 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
 };
 
 const getUserProfile = async(req:Request, res:Response):Promise<void> => {
-    const { userName } = req.params;
+    const { query } = req.params;
     try {
-        const user = await User.findOne({ userName }).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
+        let user;
+        if(mongoose.Types.ObjectId.isValid(query)){
+            user = await User.findById(query).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
+        }
+        else{
+            user = await User.findOne({ userName:query }).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
+        }
         if(!user){
             res.status(404).json({ error:"User not found" })
             return;

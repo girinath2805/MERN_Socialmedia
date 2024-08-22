@@ -6,9 +6,8 @@ import { upload } from '../utils/uploadToS3'
 
 const router = express.Router()
 
-
-router.get('/:id', getPost)
 router.get('/feed', protectRoute, getFeedPosts)
+router.get('/:id', getPost)
 router.post('/create',protectRoute, upload.single('post'), createPost)
 router.post('/like/:id', protectRoute, likeUnlikePost)
 router.post('/reply/:id', protectRoute, replyToPost)

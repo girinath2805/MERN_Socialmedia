@@ -7,6 +7,7 @@ import useShowToast from "../hooks/UseShowToast"
 import { User } from "../atoms/userAtom"
 import { Triangle } from "react-loader-spinner"
 import { Flex } from "@chakra-ui/react"
+import NotFound404 from "./NotFound404"
 
 export interface IUser extends User {
   following: string[],
@@ -17,9 +18,8 @@ const UserPage = () => {
   const [user, setUser] = useState<IUser | null>(null)
   const { showToast } = useShowToast()
   const { username } = useParams()
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   useEffect(() => {
-    setIsLoading(true)
     const getUser = async () => {
       try {
         const response = await axios.get(`/api/users/profile/${username}`)
@@ -57,10 +57,16 @@ const UserPage = () => {
 
   return (
     <>
-      {isLoading ? (
+      {!user ? (
+        isLoading ? (
         <Flex w={'full'} h={'70vh'} justifyContent={'center'} alignItems={'center'}>
           <Triangle width="full" height="full" color="white"/>
-        </Flex>
+        </Flex>) : (
+          <Flex justifyContent={'center'}>
+            <NotFound404/>
+          </Flex>
+          
+        )
       ) : (
         <>
           <UserHeader user={user} />

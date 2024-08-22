@@ -160,10 +160,22 @@ const getFeedPosts = async(req:AuthenticatedRequest, res:Response):Promise<void>
             return;
         }
 
+        if(!user.following){
+            res.status(200).json({ message:"No followers"})
+        }
+
         const following = user.following;
 
         const feedPosts = await Post.find({ postedBy:{ $in:following } }).sort({ createdAt: -1}).exec()
-        res.status(200).json({ feedPosts })
+
+        const signedPosts = feedPosts.map((post) => {
+            if(post.img){
+                return {...post.toObject(), img:getCloudFrontSignedUrl(post.img, 1)}
+            }
+            return post.toObject()
+        })
+
+        res.status(200).json(signedPosts)
 
     } catch (error) {
         res.status(500).json({ error:(error as Error).message});

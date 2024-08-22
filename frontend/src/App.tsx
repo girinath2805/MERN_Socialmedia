@@ -22,32 +22,19 @@ const App = () => {
 
   return (
     <Container maxW='620px'>
-      <Header/>
+      <Header />
       <Routes>
-        <Route path="/" element={user ? <HomePage/> : <Navigate to={"/auth"}/> }/>
-        <Route path="/auth" element={!user ? <AuthPage/> : <Navigate to={"/"}/>}/>
-        <Route path="/update" element={user ? <UpdateProfilePage/> : <Navigate to={"/auth"}/>}/>
-        <Route path="/reset-password/:token" element={<ResetPassword/>}/>
-        <Route path="/:username" element={<UserPage/>}/>
-        <Route path="/:username/posts/:pid" element={<PostPage/>}/>
+        <Route path="/" element={user ? <HomePage /> : <Navigate to={"/auth"} />} />
+        <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to={"/"} />} />
+        <Route path="/update" element={user ? <UpdateProfilePage /> : <Navigate to={"/auth"} />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/:username" element={<UserPage />} />
+        <Route path="/:username/posts/:pid" element={<PostPage />} />
       </Routes>
-      {user ? (
-        <LogoutButton/>
-        ) : (
-          <Button
-          position={"fixed"}
-          top={"30px"}
-          right={"30px"}
-          size={"sm"}
-          onClick={navigateToSignin}
-          bg={useColorModeValue('','')}
-          _hover={{color:useColorModeValue("white","black"),
-            bg:useColorModeValue('black','white')}}
-        >
-          Signin
-        </Button>
-        )}
-        {user && <CreatePost />}
+      {user &&
+        <LogoutButton />
+      }
+      {user && <CreatePost />}
     </Container>
   )
 }
