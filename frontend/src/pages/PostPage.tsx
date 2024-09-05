@@ -1,11 +1,32 @@
 import { Avatar, Box, Button, Divider, Flex, Image, Text } from "@chakra-ui/react"
 import { BsThreeDots } from "react-icons/bs"
 import Actions from "../components/Actions"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Comment from "../components/Comment"
+import useShowToast from "../hooks/UseShowToast"
+import { User } from "../atoms/userAtom"
+import axios from "axios"
+
+export interface IUser extends User {
+  following: string[],
+  followers: string[]
+}
 
 const PostPage = () => {
   const [liked, setLiked] = useState<boolean>(false)
+  const [user, setUser] = useState<IUser | null>(null)
+  const { showToast } = useShowToast();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const getUser = async () => {
+      
+    }
+
+    getUser();
+
+  }, [])
+
   return (
     <>
     <Flex>
@@ -26,7 +47,7 @@ const PostPage = () => {
       <Image src={'/post1.png'} w={'full'}/>
     </Box>
     <Flex gap={3} my={3}>
-      <Actions liked={liked} setLiked={setLiked}/>
+      <Actions post={post}/>
     </Flex>
     <Flex gap={2} alignItems={"center"}>
       <Text color={'gray.light'} fontSize={'sm'}>238 replies</Text>
@@ -50,16 +71,6 @@ const PostPage = () => {
     createdAt={'2d'}
     likes={100}
     userName={'John Doe'}
-    userAvatar={'https://bit.ly/dan-abramov'}/>
-    <Comment comment={"This looks really great !"}
-    createdAt={'2d'}
-    likes={100}
-    userName={'Jane Doe'}
-    userAvatar={'https://bit.ly/kent-c-dodds'}/>
-    <Comment comment={"This looks really great !"}
-    createdAt={'2d'}
-    likes={100}
-    userName={'Jake Doe'}
     userAvatar={'https://bit.ly/dan-abramov'}/>
     </>
   )

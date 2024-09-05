@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 import UserHeader from "../components/UserHeader"
-import UserPost from "../components/UserPost"
 import { useParams } from "react-router-dom"
 import axios from "axios"
 import useShowToast from "../hooks/UseShowToast"
 import { User } from "../atoms/userAtom"
 import { Triangle } from "react-loader-spinner"
-import { Flex } from "@chakra-ui/react"
+import { Flex, Text } from "@chakra-ui/react"
 import NotFound404 from "./NotFound404"
+import Post from "../components/Post"
 
 export interface IUser extends User {
   following: string[],
@@ -19,6 +19,9 @@ const UserPage = () => {
   const { showToast } = useShowToast()
   const { username } = useParams()
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [posts, setPosts] = useState([])
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -31,6 +34,7 @@ const UserPage = () => {
           });
         } else {
           setUser(response.data.user)
+          getPosts(response.data.user.userName);
         }
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
@@ -51,7 +55,41 @@ const UserPage = () => {
       }
     }
 
-    getUser()
+    const getPosts = async (userName: string) => {
+
+      setIsFetching(true);
+      try {
+        const response = await axios.get("/api/posts/user/" + userName)
+        if (response.data.error) {
+          showToast({
+            title: 'Error',
+            description: response.data.error,
+            status: 'error',
+          });
+        } else {
+          console.log(response.data);
+          setPosts(response.data)
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          showToast({
+            title: 'Error',
+            description: error.response.data.error,
+            status: 'error',
+          });
+        } else {
+          showToast({
+            title: 'Error',
+            description: 'An error occurred while getting user profile. Please try again.',
+            status: 'error',
+          });
+        }
+      } finally {
+        setIsFetching(false);
+      }
+    }
+
+    getUser();
 
   }, [username])
 
@@ -59,20 +97,29 @@ const UserPage = () => {
     <>
       {!user ? (
         isLoading ? (
-        <Flex w={'full'} h={'70vh'} justifyContent={'center'} alignItems={'center'}>
-          <Triangle width="full" height="full" color="white"/>
-        </Flex>) : (
+          <Flex w={'full'} h={'70vh'} justifyContent={'center'} alignItems={'center'}>
+            <Triangle color="white"  height="300" width="250"/>
+          </Flex>) : (
           <Flex justifyContent={'center'}>
-            <NotFound404/>
+            <NotFound404 />
           </Flex>
-          
         )
       ) : (
         <>
           <UserHeader user={user} />
-          <UserPost likes={1200} replies={500} postImg={'/post1.png'} postTitle={"Let's talk about threads"} />
-          <UserPost likes={1200} replies={500} postImg={'/post1.png'} postTitle={"Let's talk about threads"} />
-          <UserPost likes={1200} replies={500} postTitle={"Let's talk about threads"} />
+          {!isFetching && posts.length === 0 && (
+            <Flex justifyContent={"center"} alignItems={"center"} mt={24}>
+              <Text fontWeight={"bold"}>No posts yet</Text>
+            </Flex>
+          )}
+          {isFetching && (
+            <Flex w={'full'} justifyContent={'center'} alignItems={'center'} p={5}>
+              <Triangle color="white" height="250" width="220"/>
+            </Flex>
+          )}
+          {!isFetching && posts.length !== 0 && posts.map((post) => (
+            <Post key={post._id} post={post}/>
+          ))}
         </>
       )}
     </>

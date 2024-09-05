@@ -1,43 +1,162 @@
-import { Box, Text, Flex, } from "@chakra-ui/react"
-import { useState } from 'react' 
+import { Flex, Text, Box, Button, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, FormControl, Input, FormErrorMessage, Textarea, useDisclosure } from "@chakra-ui/react"
+import { ChangeEvent, useState } from 'react'
 import { useRecoilValue } from "recoil";
 import userAtom from "../atoms/userAtom";
 import useShowToast from "../hooks/UseShowToast";
 import axios from "axios";
 
- 
 interface IPost {
-    _id: string,
-    createdAt: string,
-    likes: string[],
-    postedBy: string,
-    replies: {
-        userId:string,
-        text:string,
-        userName:string,
-        userProfilePic?:string,
-    }[],
-    text: string,
-    img?: string,
+	_id: string,
+	createdAt: string,
+	likes: string[],
+	postedBy: string,
+	replies: {
+		userId: string,
+		text: string,
+		userName: string,
+		userProfilePic?: string,
+	}[],
+	text: string,
+	img?: string,
 }
 
-const Actions = ({post} : {post:IPost}) => {
-  const user = useRecoilValue(userAtom)
-  const { showToast } = useShowToast();
-  const [liked, setLiked] = useState<boolean>(false);
+const MAX_CHAR = 500
 
-  const handleLikeUnlike = async() => {
-	if(!user){
-		showToast({
-			description:"You must be logged in to like the post",
-			status:"error"
-		});
-		return;
+const Actions = ({ post: _post }: { post: IPost }) => {
+	const user = useRecoilValue(userAtom)
+	const { showToast } = useShowToast();
+	const [post, setPost] = useState<IPost>(_post)
+	const [liked, setLiked] = useState<boolean>(post.likes.includes(user?._id));
+    const [replyText, setReplyText] = useState<string>("")
+    const { isOpen, onOpen, onClose } = useDisclosure();
+	const [isLiking, setIsLiking] = useState<boolean>(false);
+	const [isReplying, setIsReplying] = useState<boolean>(false);
+    const [error, setError] = useState<string>("")
+    const [remainingChar, setRemainingChar] = useState<number>(MAX_CHAR)
+
+	const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+        const inputText = e.target.value
+        if (inputText.length > MAX_CHAR) {
+            const truncatedText = inputText.slice(0, MAX_CHAR)
+            setReplyText(truncatedText)
+            setRemainingChar(0)
+        }
+        else {
+            setReplyText(inputText)
+            setRemainingChar(MAX_CHAR - inputText.length)
+        }
+    }
+
+	const handleLikeUnlike = async () => {
+		if (!user) {
+			showToast({
+				description: "You must be logged in to like the post",
+				status: "error"
+			});
+			return;
+		}
+
+		if (isLiking) return;
+		setIsLiking(true);
+		
+		try {
+			const response = await axios.put(`/api/posts/like/${post._id}`)
+			if (response.data.error) {
+				showToast({
+					title: "Error",
+					description: response.data.error,
+					status: "error",
+				})
+			} else {
+				console.log(response.data);
+				if (!liked) {
+					setPost({ ...post, likes: [...post.likes, user._id] })
+				} else {
+					setPost({ ...post, likes: post.likes.filter(id => id !== user._id) })
+				}
+
+				setLiked(!liked);
+			}
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response) {
+				showToast({
+					title: 'Error',
+					description: error.response.data.error,
+					status: 'error',
+				});
+			} else {
+				showToast({
+					title: 'Error',
+					description: 'An error occurred while getting the post. Please try again.',
+					status: 'error',
+				});
+			}
+		} finally {
+			setIsLiking(false);
+		}
+	};
+
+	const handleReply = async() => {
+
+		if (!user) {
+			showToast({
+				description: "You must be logged in to like the post",
+				status: "error"
+			});
+			return;
+		}
+
+		if(isReplying) return;
+		setIsReplying(true);
+
+		setError("")
+        if (replyText.length === 0) {
+            setError("Content is required")
+            return
+        }
+
+		try {
+			const response = await axios.put(`/api/posts/reply/${post._id}`, {
+				text:replyText
+			})
+
+			if (response.data.error) {
+                showToast({
+                    title: "Error",
+                    description: response.data.error,
+                    status: "error",
+                })
+            } else {
+                console.log(response.data.savedPost);
+                showToast({
+                    description: "Replied to the post",
+                    status: "success"
+                })
+                onClose()
+                setReplyText("")
+            }
+
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response) {
+				showToast({
+					title: 'Error',
+					description: error.response.data.error,
+					status: 'error',
+				});
+			} else {
+				showToast({
+					title: 'Error',
+					description: 'An error occurred while getting the post. Please try again.',
+					status: 'error',
+				});
+			}
+		} finally {
+			setIsReplying(false);
+		}
 	}
-  };
 
-  return (
-    <Flex flexDirection='column'>
+	return (
+		<Flex flexDirection='column'>
 			<Flex gap={3} my={2} onClick={(e) => e.preventDefault()}>
 				<svg
 					aria-label='Like'
@@ -47,7 +166,7 @@ const Actions = ({post} : {post:IPost}) => {
 					role='img'
 					viewBox='0 0 24 22'
 					width='20'
-                    onClick={handleLikeUnlike}
+					onClick={handleLikeUnlike}
 				>
 					<path
 						d='M1 7.66c0 4.575 3.899 9.086 9.987 12.934.338.203.74.406 1.013.406.283 0 .686-.203 1.013-.406C19.1 16.746 23 12.234 23 7.66 23 3.736 20.245 1 16.672 1 14.603 1 12.98 1.94 12 3.352 11.042 1.952 9.408 1 7.328 1 3.766 1 1 3.736 1 7.66Z'
@@ -64,6 +183,7 @@ const Actions = ({post} : {post:IPost}) => {
 					role='img'
 					viewBox='0 0 24 24'
 					width='20'
+					onClick={onOpen}
 				>
 					<title>Comment</title>
 					<path
@@ -78,8 +198,42 @@ const Actions = ({post} : {post:IPost}) => {
 				<RepostSVG />
 				<ShareSVG />
 			</Flex>
+
+			<Flex gap={2} alignItems={"center"}>
+				<Text color={"gray.light"} fontSize='sm'>
+					{post.replies.length} replies
+				</Text>
+				<Box w={0.5} h={0.5} borderRadius={"full"} bg={"gray.light"}></Box>
+				<Text color={"gray.light"} fontSize='sm'>
+					{post.likes.length} likes
+				</Text>
+			</Flex>
+			<Modal isOpen={isOpen} onClose={onClose} isCentered motionPreset="slideInBottom">
+                <ModalOverlay backdropFilter={"blur(3px)"} />
+                <ModalContent bg={"gray.dark"}>
+                    <ModalHeader>Reply to Post</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody pb={6}>
+                        <FormControl isInvalid={!!error}>
+                                <Textarea
+                                    placeholder="Reply goes here..."
+                                    onChange={handleTextChange}
+                                    value={replyText} />
+                                {error && <FormErrorMessage>{error}</FormErrorMessage>}
+                            <Text fontSize={"xs"} fontWeight={"bold"} textAlign={"right"} m={1} color={"gray.400"}>
+                                {remainingChar}/{MAX_CHAR}
+                            </Text>
+                        </FormControl>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button colorScheme='green' mr={3} onClick={handleReply} isLoading={isReplying}>
+                            Reply
+                        </Button> 
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
 		</Flex>
-  )
+	)
 }
 
 export default Actions

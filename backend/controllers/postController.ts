@@ -4,6 +4,8 @@ import mongoose, { mongo } from "mongoose";
 import Post, { IReply } from "../models/postModel";
 import uploadToS3 from "../utils/uploadToS3";
 import getCloudFrontSignedUrl from "../utils/getSignedUrl";
+import deleteFromS3 from "../utils/deletefromS3";
+import invalidateCloudFront from "../utils/invalidateUrl";
 
 interface AuthenticatedRequest extends Request{
     user?:IUser | null
@@ -81,9 +83,14 @@ const deletePost = async(req:AuthenticatedRequest, res:Response):Promise<void> =
             return;
         }
 
-        if(post?.postedBy !== req.user?._id){
+        if(!post?.postedBy.equals(req.user?._id as mongoose.Types.ObjectId)){
             res.status(500).json({ error:"Unauthorized to delete the post"})
             return;
+        }
+
+        if(post.img){
+            await deleteFromS3(post.img);
+            await invalidateCloudFront(post.img);
         }
 
         await Post.findByIdAndDelete(id)
@@ -92,7 +99,7 @@ const deletePost = async(req:AuthenticatedRequest, res:Response):Promise<void> =
     } catch (error) {
         res.status(500).json({ error:(error as Error).message});
     }
-}  
+}    
 
 const likeUnlikePost = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
 
@@ -109,12 +116,12 @@ const likeUnlikePost = async(req:AuthenticatedRequest, res:Response):Promise<voi
 
         const userLikedPost = post.likes.includes(userId)
         if(userLikedPost){
-            await Post.updateOne(postId, {$pull:{likes:userId}});
-            res.status(201).json({ message:"Post unliked sucessfully" })
+            await Post.updateOne({_id:postId}, {$pull:{likes:userId}});
+            res.status(201).json("Post unliked sucessfully")
         }
         else{
-            await Post.updateOne(postId, {$push:{likes:userId}});
-            res.status(201).json({ error:"Post liked sucessfully" })
+            await Post.updateOne({_id:postId}, {$push:{likes:userId}});
+            res.status(201).json("Post liked sucessfully")
         }
 
     } catch (error) {
@@ -182,4 +189,26 @@ const getFeedPosts = async(req:AuthenticatedRequest, res:Response):Promise<void>
     }
 }
 
-export {createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts}
+const getUserPosts = async(req:Request, res:Response):Promise<void> => {
+    const { username } = req.params
+    try {
+        const user = await User.findOne({ userName:username })
+        if(!user){
+            res.status(404).json({ error:"User not found"})
+            return;
+        }
+
+        const posts = await Post.find({ postedBy:user._id}).sort({ createdAt:-1 });
+        const signedPosts = posts.map((post) => {
+            if(post.img){
+                return {...post.toObject(), img:getCloudFrontSignedUrl(post.img, 1)}
+            }
+            return post.toObject();
+        })
+        res.status(200).json(signedPosts);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message})
+    }
+}
+
+export {createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts, getUserPosts}

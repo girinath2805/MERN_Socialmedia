@@ -1,23 +1,25 @@
-import { Avatar, Box, Flex, Image, Text } from "@chakra-ui/react"
+import { Avatar, Box, Flex, Image, Text, Tooltip } from "@chakra-ui/react"
 import { Link, useNavigate } from "react-router-dom"
-import { BsThreeDots } from "react-icons/bs"
 import { useEffect, useState } from "react"
 import Actions from "./Actions"
 import useShowToast from "../hooks/UseShowToast"
 import axios from "axios"
 import { IUser } from "../pages/UserPage"
 import { formatDistanceToNow } from "date-fns"
- 
+import { DeleteIcon } from "@chakra-ui/icons"
+import { useRecoilValue } from "recoil"
+import userAtom from "../atoms/userAtom"
+
 interface IPost {
     _id: string,
     createdAt: string,
     likes: string[],
     postedBy: string,
     replies: {
-        userId:string,
-        text:string,
-        userName:string,
-        userProfilePic?:string,
+        userId: string,
+        text: string,
+        userName: string,
+        userProfilePic?: string,
     }[],
     text: string,
     img?: string,
@@ -27,39 +29,74 @@ const Post = ({ post }: { post: IPost }) => {
     const { showToast } = useShowToast()
     const [user, setUser] = useState<IUser | null>(null);
     const navigate = useNavigate();
+    const currentUser = useRecoilValue(userAtom);
+
     useEffect(() => {
-        const getUser = async() => {
+        const getUser = async () => {
             try {
                 const response = await axios.get(`/api/users/profile/${post.postedBy}`)
                 if (response.data.error) {
                     showToast({
-                      title: "Error",
-                      description: response.data.error,
-                      status: "error",
+                        title: "Error",
+                        description: response.data.error,
+                        status: "error",
                     })
-                  } else {
+                } else {
                     setUser(response.data.user)
                 }
             } catch (error) {
                 if (axios.isAxiosError(error) && error.response) {
                     showToast({
-                      title: 'Error',
-                      description: error.response.data.error,
-                      status: 'error',
+                        title: 'Error',
+                        description: error.response.data.error,
+                        status: 'error',
                     });
-                  } else {
+                } else {
                     showToast({
-                      title: 'Error',
-                      description: 'An error occurred while getting the post. Please try again.',
-                      status: 'error',
+                        title: 'Error',
+                        description: 'An error occurred while getting the post. Please try again.',
+                        status: 'error',
                     });
-                  }
+                }
             }
         }
 
         getUser()
 
-    })
+    }, [])
+
+    const handleDeletePost = async () => {
+        try {
+            if(!window.confirm("Are you sure you want to delete the post?")) return;
+            const response = await axios.delete("/api/posts/" + post._id)
+            if (response.data.error) {
+                showToast({
+                    title: "Error",
+                    description: response.data.error,
+                    status: "error",
+                })
+            } else {
+                showToast({
+                    description:"Post deleted",
+                    status:"info"
+                })
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response) {
+                showToast({
+                    title: 'Error',
+                    description: error.response.data.error,
+                    status: 'error',
+                });
+            } else {
+                showToast({
+                    title: 'Error',
+                    description: 'An error occurred while getting the post. Please try again.',
+                    status: 'error',
+                });
+            }
+        }
+    }
 
 
     return (
@@ -77,53 +114,61 @@ const Post = ({ post }: { post: IPost }) => {
                         {post.replies.length === 0 && <Text textAlign={"center"}>🥱</Text>}
                         {post.replies.length > 0 && post.replies[0].userProfilePic && (
                             <Avatar
-                            size={'xs'}
-                            name="John Doe"
-                            src={post.replies[0].userProfilePic}
-                            position={'absolute'}
-                            top={'0px'}
-                            left={'15px'}
-                            padding={'2px'} />
+                                size={'xs'}
+                                name="John Doe"
+                                src={post.replies[0].userProfilePic}
+                                position={'absolute'}
+                                top={'0px'}
+                                left={'15px'}
+                                padding={'2px'} />
                         )}
                         {post.replies.length > 1 && post.replies[1].userProfilePic && (
                             <Avatar
-                            size={'xs'}
-                            name="John Doe"
-                            src={post.replies[0].userProfilePic}
-                            position={'absolute'}
-                            bottom={'0px'}
-                            right={'-5px'}
-                            padding={'2px'} />
+                                size={'xs'}
+                                name="John Doe"
+                                src={post.replies[0].userProfilePic}
+                                position={'absolute'}
+                                bottom={'0px'}
+                                right={'-5px'}
+                                padding={'2px'} />
                         )}
                         {post.replies.length > 2 && post.replies[2].userProfilePic && (
                             <Avatar
-                            size={'xs'}
-                            name="John Doe"
-                            src={post.replies[0].userProfilePic}
-                            position={'absolute'}
-                            top={'0px'}
-                            left={'4px'}
-                            padding={'2px'} />
+                                size={'xs'}
+                                name="John Doe"
+                                src={post.replies[0].userProfilePic}
+                                position={'absolute'}
+                                top={'0px'}
+                                left={'4px'}
+                                padding={'2px'} />
                         )}
                     </Box>
                 </Flex>
                 <Flex flex={1} flexDirection={'column'} gap={2}>
                     <Flex justifyContent={'space-between'} w={'full'}>
                         <Flex w={'full'} alignItems={'center'}>
-                            <Text fontSize={'sm'} fontWeight={'bold'} 
-                            onClick={e => {
-                                e.preventDefault();
-                                navigate(`/${user?.userName}`);
-                            }}>
+                            <Text fontSize={'sm'} fontWeight={'bold'}
+                                onClick={e => {
+                                    e.preventDefault();
+                                    navigate(`/${user?.userName}`);
+                                }}>
                                 {user?.name}
                             </Text>
                             <Image src="/verified.png" w={4} h={4} ml={1} />
                         </Flex>
                         <Flex gap={4} alignItems={'center'}>
-                            <Text fontSize={'xs'} color={'gray.light'} width={36} textAlign={"right"}>
+                            <Text fontSize={'xs'} color={'gray.light'} width={"max-content"} textAlign={"right"}>
                                 {formatDistanceToNow(new Date(post.createdAt))}
                             </Text>
-                            <BsThreeDots />
+                            {currentUser?._id === user?._id && (
+                                <Tooltip label="Delete" placement="top" hasArrow bg={"gray.dark"} color={"white"} fontSize={15} 
+                                arrowPadding={10} arrowSize={10} padding={2} openDelay={100} rounded={"xl"} px={5}>
+                                    <DeleteIcon fontSize={15} color={"red.500"} onClick={(e) => {
+                                        e.preventDefault();
+                                        handleDeletePost();
+                                    }} />
+                                </Tooltip>
+                            )}
                         </Flex>
                     </Flex>
                     <Text fontSize={'sm'}>{post.text}</Text>
@@ -133,14 +178,8 @@ const Post = ({ post }: { post: IPost }) => {
                         </Box>
                     )}
                     <Flex>
-                        <Actions post={post}/>
+                        <Actions post={post} />
                     </Flex>
-                    <Flex gap={2} alignItems={'center'}>
-                        <Text color={'gray.light'} fontSize={'sm'}>{post.replies.length} replies</Text>
-                        <Box w={0.5} h={0.5} borderRadius={'full'} bg={'gray.light'}></Box>
-                        <Text color={'gray.light'} fontSize={'sm'}>{post.likes.length}likes</Text>
-                    </Flex>
-
                 </Flex>
             </Flex>
         </Link>
