@@ -6,11 +6,19 @@ import messageRoutes from './routes/messageRoutes'
 import connectDB from './db/connectDB'
 import dotenv from 'dotenv'
 import { io, server, app } from './socket/socket'
+import cors from "cors"
 
 dotenv.config()
 
 const PORT = process.env.PORT||5000
+const FRONTEND_URL = process.env.FRONTEND_URL || ''
+
 connectDB()
+
+app.use(cors({
+    origin:FRONTEND_URL,
+    credentials:true
+}))
 
 app.use(express.json())
 app.use(express.urlencoded({ extended:true }))
