@@ -67,7 +67,6 @@ const UserPage = () => {
             status: 'error',
           });
         } else {
-          console.log(response.data);
           setPosts(response.data)
         }
       } catch (error) {
