@@ -1,4 +1,4 @@
-import mongoose, {Schema, Document, mongo} from "mongoose";
+import mongoose, {Document} from "mongoose";
 
 export interface IReply{
     userId:mongoose.Types.ObjectId,

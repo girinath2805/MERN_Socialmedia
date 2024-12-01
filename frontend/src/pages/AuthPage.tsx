@@ -7,7 +7,6 @@ import ForgotPassword from "../components/ForgotPassword"
 
 const AuthPage = () => {
   const authScreenState = useRecoilValue(authScreenAtom);
-  console.log(authScreenState)
   return (
     <>
       {authScreenState === 'signup' ? <Signup /> : (authScreenState === 'forget-password' ? <ForgotPassword/> : <Signin />)}

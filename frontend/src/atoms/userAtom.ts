@@ -1,21 +1,13 @@
 // userAtom.ts
 import { atom } from 'recoil';
+import { IUser } from '../types';
 
-export interface User {
-  _id: string;
-  userName: string;
-  name: string;
-  email: string;
-  bio: string;
-  profilePic: string;
-}
-
-const getUserFromLocalStorage = (): User | null => {
+const getUserFromLocalStorage = (): IUser | null => {
   const storedUser = localStorage.getItem('user-threads');
   return storedUser ? JSON.parse(storedUser) : null;
 };
 
-const userAtom = atom<User | null>({
+const userAtom = atom<IUser | null>({
   key: 'userAtom',
   default: getUserFromLocalStorage(),
 });

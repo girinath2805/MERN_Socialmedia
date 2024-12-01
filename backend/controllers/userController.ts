@@ -1,4 +1,4 @@
-import User, {IUser} from "../models/userModel"
+import User, { IUser } from "../models/userModel"
 import bcrypt from 'bcryptjs'
 import { Response, Request } from "express"
 import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie"
@@ -7,17 +7,18 @@ import crypto from 'crypto'
 import { sendEmail } from "../utils/sendEmail"
 import getCloudFrontSignedUrl from "../utils/getSignedUrl"
 import uploadToS3 from "../utils/uploadToS3"
+import Post from "../models/postModel"
 
-interface AuthenticatedRequest extends Request{
-    user?:IUser | null
+interface AuthenticatedRequest extends Request {
+    user?: IUser | null
 }
 
-const checkAvailability = async(req:Request, res:Response) => {
+const checkAvailability = async (req: Request, res: Response) => {
     const { userName } = req.query;
 
     try {
         const userNameExists = await User.findOne({ userName })
-        const userNameAvailable:boolean = !userNameExists
+        const userNameAvailable: boolean = !userNameExists
         res.status(200).json({ userNameAvailable });
 
     } catch (error) {
@@ -25,13 +26,13 @@ const checkAvailability = async(req:Request, res:Response) => {
     }
 }
 
-const signupUser = async(req:Request, res:Response): Promise<void> => {
-    try {   
+const signupUser = async (req: Request, res: Response): Promise<void> => {
+    try {
         const { name, email, userName, password } = req.body
 
-        const user = await User.findOne({ $or:[{email}, {userName}] })
-        if(user) {
-            res.status(400).json({ error:"User already exists with the email or username"})
+        const user = await User.findOne({ $or: [{ email }, { userName }] })
+        if (user) {
+            res.status(400).json({ error: "User already exists with the email or username" })
             return;
         }
 
@@ -39,83 +40,88 @@ const signupUser = async(req:Request, res:Response): Promise<void> => {
         const hashPassword = await bcrypt.hash(password, salt)
 
         const newUser = new User({
-            name, 
-            email, 
-            password:hashPassword, 
+            name,
+            email,
+            password: hashPassword,
             userName,
         })
         const savedUser = await newUser.save()
-        if(savedUser){
+        if (savedUser) {
             generateTokenAndSetCookie(savedUser._id as mongoose.Schema.Types.ObjectId, res)
             res.status(201).json({
-                _id:savedUser._id,
-                name:savedUser.name,
-                email:savedUser.email,
-                userName:savedUser.userName,  
-                bio:savedUser.bio,
-                profilePic:savedUser.profilePic,
+                _id: savedUser._id,
+                name: savedUser.name,
+                email: savedUser.email,
+                userName: savedUser.userName,
+                bio: savedUser.bio,
+                profilePic: savedUser.profilePic,
             })
         }
-        else{
-            res.status(400).json({error: "Invalid user data"})
+        else {
+            res.status(400).json({ error: "Invalid user data" })
         }
     } catch (error) {
-        res.status(500).json({ error: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message })
         console.log("Error in signup user:", (error as Error).message)
     }
 }
 
-const signinUser = async(req:Request, res:Response):Promise<void> => {
+const signinUser = async (req: Request, res: Response): Promise<void> => {
 
     try {
         const { userName, password } = req.body
         const user = await User.findOne({ userName })
-        if(!user){
-            res.status(404).json({ error: "Username doesn't exist"})
+        if (!user) {
+            res.status(404).json({ error: "Username doesn't exist" })
             return
         }
         const isPasswordCorrect = await bcrypt.compare(password, user?.password)
 
-        if(!isPasswordCorrect) {
-            res.status(401).json({ error: "Invalid credentials"})
+        if (!isPasswordCorrect) {
+            res.status(401).json({ error: "Invalid credentials" })
             return
+        }
+
+        if(user.isFrozen){
+            user.isFrozen = true;
+            await user.save();
         }
 
         generateTokenAndSetCookie(user._id as mongoose.Schema.Types.ObjectId, res)
 
 
         res.status(201).json({
-            _id:user._id,
-            name:user.name,
-            email:user.email,
-            userName:user.userName,
-            bio:user.bio,
-            profilePic:user.profilePic ? getCloudFrontSignedUrl(user.profilePic, 360) : "",
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            userName: user.userName,
+            bio: user.bio,
+            profilePic: user.profilePic ? getCloudFrontSignedUrl(user.profilePic, 360) : "",
         })
 
     } catch (error) {
-        res.status(500).json({ error: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message })
         console.error("Error signing in user :", error)
     }
 }
 
-const signoutUser = async(req:Request, res:Response):Promise<void> => {
+const signoutUser = async (req: Request, res: Response): Promise<void> => {
     try {
-        res.cookie("token", "", { maxAge:1 })
-        res.status(201).json({ message:"User signed out successfully!" })
+        res.cookie("token", "", { maxAge: 1 })
+        res.status(201).json({ message: "User signed out successfully!" })
     } catch (error) {
-        res.status(500).json({ error: (error as Error).message})
+        res.status(500).json({ error: (error as Error).message })
         console.log("Error in signing out user:", (error as Error).message)
     }
 }
 
-const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
+const followUnfollowUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
         const currentUserId = req.user?._id as mongoose.Types.ObjectId;
         const targetId = new mongoose.Types.ObjectId(id);
 
-        if (currentUserId.equals(targetId)){
+        if (currentUserId.equals(targetId)) {
             res.status(400).json({ error: "You cannot follow/unfollow yourself" });
             return;
         }
@@ -137,7 +143,7 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
                 User.findByIdAndUpdate(targetId, { $pull: { followers: currentUserId } })
             ]);
             res.status(201).json({ message: "Unfollowed successfully" });
-        } 
+        }
         else {
             // Follow
             await Promise.all([
@@ -153,63 +159,73 @@ const followUnfollowUser = async(req:AuthenticatedRequest, res:Response):Promise
     }
 }
 
-const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> => {
-    const {name, email, userName, password, bio} = req.body
+const updateUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { name, email, userName, password, bio } = req.body
     const profilePic = req.file;
-    
-    if(!req.user){
-        res.status(401).json({ error:"Unauthorized"})
+
+    if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" })
         return;
     }
     const userId = req.user?._id as mongoose.Types.ObjectId
 
-    if(!userId){
-        res.status(400).json({ error:"Unauthorized" })
+    if (!userId) {
+        res.status(400).json({ error: "Unauthorized" })
         return;
     }
-    
+
     try {
         let user = await User.findById(userId)
-        if(!user){
-            res.status(404).json({ error:"User not found" })
+        if (!user) {
+            res.status(404).json({ error: "User not found" })
             return;
         }
 
         if (name) user.name = name;
 
-        if(password){
+        if (password) {
             const salt = await bcrypt.genSalt(10);
             const hashPassword = await bcrypt.hash(password, salt);
             user.password = hashPassword
         }
 
-        if(email){
+        if (email) {
             const existingUserWithEmail = await User.findOne({ email })
-            if(existingUserWithEmail && !userId.equals(existingUserWithEmail._id as mongoose.Types.ObjectId)){
-                res.status(400).json({ error:"Email already taken"})
+            if (existingUserWithEmail && !userId.equals(existingUserWithEmail._id as mongoose.Types.ObjectId)) {
+                res.status(400).json({ error: "Email already taken" })
                 return;
             }
             user.email = email;
         }
 
-        if(userName){
+        if (userName) {
             const existingUserWithUserName = await User.findOne({ userName })
-            if(existingUserWithUserName && !userId.equals(existingUserWithUserName._id as mongoose.Types.ObjectId)){
-                res.status(400).json({ error:"Username already taken" })
+            if (existingUserWithUserName && !userId.equals(existingUserWithUserName._id as mongoose.Types.ObjectId)) {
+                res.status(400).json({ error: "Username already taken" })
                 return;
             }
             user.userName = userName;
         }
 
-        if(profilePic){
+        if (profilePic) {
             user.profilePic = await uploadToS3(profilePic, 'profile-pics')
         }
 
-        user.bio = bio;
+        user.bio = bio || user.bio;
 
         const savedUser = await user.save()
+        await Post.updateMany(
+            { "replies.userId": userId },
+            {
+                $set: {
+                    "replies.$[reply].userName": user.userName,
+                    "replies.$[reply].userProfilePic": user.profilePic,
+                }
+            },
+            { arrayFilters: [{ "reply.userId": userId }] }
+        )
         savedUser.password = ""
-        if(savedUser.profilePic){
+        if (savedUser.profilePic) {
             savedUser.profilePic = getCloudFrontSignedUrl(savedUser.profilePic, 360)
         }
         res.status(201).json({ user: savedUser })
@@ -220,12 +236,12 @@ const updateUser = async(req:AuthenticatedRequest, res:Response):Promise<void> =
     }
 }
 
-const forgotPassword = async(req:Request, res:Response):Promise<void> => {
+const forgotPassword = async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body;
     try {
         const user = await User.findOne({ email })
-        if(!user){
-            res.status(404).json({ error:"User not found" })
+        if (!user) {
+            res.status(404).json({ error: "User not found" })
             return;
         }
         const token = crypto.randomBytes(32).toString('hex')
@@ -246,10 +262,10 @@ const forgotPassword = async(req:Request, res:Response):Promise<void> => {
             customId: 'PasswordResetRequest'
         });
 
-        res.status(201).json({ message:"Password reset email sent" })
+        res.status(201).json({ message: "Password reset email sent" })
 
     } catch (error) {
-        res.send(500).json({error:(error as Error).message});
+        res.send(500).json({ error: (error as Error).message });
         console.error("Error :", error);
     }
 }
@@ -286,28 +302,78 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-const getUserProfile = async(req:Request, res:Response):Promise<void> => {
+const getUserProfile = async (req: Request, res: Response): Promise<void> => {
     const { query } = req.params;
     try {
         let user;
-        if(mongoose.Types.ObjectId.isValid(query)){
+        if (mongoose.Types.ObjectId.isValid(query)) {
             user = await User.findById(query).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
         }
-        else{
-            user = await User.findOne({ userName:query }).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
+        else {
+            user = await User.findOne({ userName: query }).select("-password").select('-updatedAt').select("-createdAt").select("-__v")
         }
-        if(!user){
-            res.status(404).json({ error:"User not found" })
+        if (!user) {
+            res.status(404).json({ error: "User not found" })
             return;
         }
-        if(user.profilePic){
+        if (user.profilePic) {
             user.profilePic = getCloudFrontSignedUrl(user.profilePic, 1)
         }
-        res.status(200).json({ user:user })
+        res.status(200).json({ user: user })
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
         console.log("Error in getting user:", (error as Error).message);
     }
 }
 
-export {signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile, forgotPassword, resetPassword}
+const getSuggestedUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?._id
+        const usersFollowedByYou = await User.findById(userId).select("following");
+        const users = await User.aggregate([
+            {
+                $match: {
+                    _id: { $ne: userId },
+                }
+            },
+            {
+                $sample: { size: 10 }
+            }
+        ])
+
+        const filteredUsers = users.filter(user => !usersFollowedByYou?.following?.includes(user._id))
+
+        const suggestedUsers = filteredUsers.slice(0, 4).map((user) => {
+            if (user.profilePic) {
+                user.profilePic = getCloudFrontSignedUrl(user.profilePic, 1);
+            }
+            user.password = null;
+            return user;
+        })
+
+        res.status(200).json(suggestedUsers)
+
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message })
+    }
+}
+
+const freezeAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+        const user = await User.findById(req.user?._id);
+        if (!user) {
+            res.status(404).json({ error: "User not found" })
+            return;
+        }
+
+        user.isFrozen = true
+        await user.save();
+
+        res.status(200).json("success")
+
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message })
+    }
+}
+
+export { signupUser, signinUser, signoutUser, followUnfollowUser, updateUser, checkAvailability, getUserProfile, forgotPassword, resetPassword, getSuggestedUsers, freezeAccount }

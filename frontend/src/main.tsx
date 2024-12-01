@@ -6,6 +6,7 @@ import { ChakraBaseProvider, ColorModeScript, extendTheme, ThemeConfig, ThemeOve
 import { mode, GlobalStyleProps, StyleFunctionProps } from '@chakra-ui/theme-tools'
 import { BrowserRouter } from 'react-router-dom'
 import { RecoilRoot } from 'recoil'
+import { SocketContextProvider } from './context/SocketContext.tsx'
 
 const styles: ThemeOverride["styles"] = {
   global: (props: GlobalStyleProps | StyleFunctionProps) => ({
@@ -37,7 +38,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <ChakraBaseProvider theme={theme}>
           <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-          <App />
+          <SocketContextProvider>
+            <App />
+          </SocketContextProvider>
         </ChakraBaseProvider>
       </BrowserRouter>
     </RecoilRoot>

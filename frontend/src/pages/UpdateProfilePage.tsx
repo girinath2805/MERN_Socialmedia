@@ -15,18 +15,19 @@ import {
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
 import { useRef, useState } from 'react'
 import { useRecoilState } from 'recoil'
-import userAtom, { User } from '../atoms/userAtom'
 import UsePreviewImg from '../hooks/UsePreviewImg'
 import useShowToast from '../hooks/UseShowToast'
 import axios from 'axios'
+import { IUser } from '../types'
+import userAtom from '../atoms/userAtom'
 
-interface Inputs extends User {
+interface Inputs extends IUser {
   password?: string,
 }
 
 const UpdateProfilePage = () => {
   const { showToast } = useShowToast();
-  const [user, setUser] = useRecoilState<User | null>(userAtom);
+  const [user, setUser] = useRecoilState<IUser | null>(userAtom);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [inputs, setInputs] = useState<Inputs>({
@@ -106,7 +107,8 @@ const UpdateProfilePage = () => {
     <Flex
       minH={'70vh'}
       align={'center'}
-      justify={'center'}>
+      justify={'center'}
+    >
       <Stack
         spacing={4}
         w={'full'}
@@ -114,19 +116,38 @@ const UpdateProfilePage = () => {
         bg={useColorModeValue('white', '')}
         rounded={'xl'}
         boxShadow={'lg'}
-        p={6}>
-        <Heading lineHeight={1.1} fontSize={{ base: '2xl', sm: '3xl' }}>
+        p={6}
+      >
+        <Heading lineHeight={1.1}
+          fontSize={{
+            base: '2xl',
+            sm: '3xl'
+          }}
+        >
           Edit Profile
         </Heading>
         <FormControl>
           <Stack direction={['column', 'row']} spacing={6}>
             <Center>
-              <Avatar size="xl" boxShadow={"md"} src={imgUrl || user?.profilePic} name={user?.name}>
+              <Avatar
+                size="xl"
+                boxShadow={"md"}
+                src={imgUrl || user?.profilePic}
+                name={user?.name}>
               </Avatar>
             </Center>
             <Center w="full">
-              <Button w="full" onClick={() => fileRef.current?.click()}>Change Avatar</Button>
-              <Input type='file' hidden ref={fileRef} onChange={handleImgChange} />
+              <Button
+                w="full"
+                onClick={() => fileRef.current?.click()}
+              >
+                Change Avatar
+              </Button>
+              <Input
+                type='file'
+                hidden ref={fileRef}
+                onChange={handleImgChange}
+              />
             </Center>
           </Stack>
         </FormControl>
@@ -194,7 +215,8 @@ const UpdateProfilePage = () => {
             w="full"
             _hover={{
               bg: 'red.700',
-            }}>
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -205,7 +227,8 @@ const UpdateProfilePage = () => {
             w="full"
             _hover={{
               bg: 'green.700',
-            }}>
+            }}
+          >
             Save
           </Button>
         </Stack>

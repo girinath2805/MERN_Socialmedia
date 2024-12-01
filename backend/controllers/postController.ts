@@ -48,9 +48,9 @@ const createPost = async(req:AuthenticatedRequest, res:Response):Promise<void> =
         const newPost = new Post({ postedBy, text, img})
         const savedPost = await newPost.save()
         if(savedPost.img){
-            savedPost.img = getCloudFrontSignedUrl(savedPost.img, 24)
+            savedPost.img = getCloudFrontSignedUrl(savedPost.img, 1)
         }
-        res.status(201).json({ savedPost })
+        res.status(201).json(savedPost)
 
     } catch (error) {
         res.status(500).json( {error:(error as Error).message })
@@ -67,7 +67,19 @@ const getPost = async(req:Request, res:Response):Promise<void> => {
             return;
         }      
 
-        res.status(200).json({ post })
+        if(post.img){
+            post.img = getCloudFrontSignedUrl(post.img, 1); 
+        }
+
+        if(post.replies.length > 0){
+            post.replies.forEach((reply) => {
+                if(reply.userProfilePic){
+                    reply.userProfilePic = getCloudFrontSignedUrl(reply.userProfilePic, 1);
+                }
+            })
+        }
+
+        res.status(200).json(post)
 
     } catch (error) {
         res.status(500).json({ error:(error as Error).message});
@@ -151,7 +163,7 @@ const replyToPost = async(req:AuthenticatedRequest, res:Response):Promise<void> 
         const reply:IReply = {userId, text, userProfilePic, userName};
         post.replies.push(reply)
         await post.save()
-        res.status(201).json({ post });
+        res.status(201).json(reply);
         
     } catch (error) {
         res.status(500).json({ error:(error as Error).message});

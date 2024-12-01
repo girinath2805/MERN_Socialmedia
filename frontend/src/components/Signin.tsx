@@ -21,6 +21,7 @@ import authScreenAtom from '../atoms/authAtom'
 import useShowToast from '../hooks/UseShowToast'
 import axios from 'axios'
 import userAtom from '../atoms/userAtom'
+import Header from './Header'
 
 interface Errors {
   userName?: string;
@@ -64,7 +65,6 @@ const Signin = () => {
           status: "error",
         })
       } else {
-        console.log(response.data);
         localStorage.setItem("user-threads", JSON.stringify(response.data));
         setUser(response.data)
       }
@@ -88,6 +88,8 @@ const Signin = () => {
     }
   }
   return (
+    <>
+    <Header/>
     <Flex
       align={'center'}
       justify={'center'}
@@ -109,7 +111,7 @@ const Signin = () => {
           }}
         >
           <Stack spacing={4}>
-          <FormControl isInvalid={!!errors.userName} isRequired>
+            <FormControl isInvalid={!!errors.userName} isRequired>
               <FormLabel>Username</FormLabel>
               <Input type="text" onChange={(e: ChangeEvent<HTMLInputElement>) => setUserName(e.target.value)} />
               {errors.userName && <FormErrorMessage>{errors.userName}</FormErrorMessage>}
@@ -158,6 +160,7 @@ const Signin = () => {
         </Box>
       </Stack>
     </Flex>
+    </>
   )
 }
 

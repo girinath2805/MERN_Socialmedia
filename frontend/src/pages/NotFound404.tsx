@@ -1,4 +1,4 @@
-import React  from 'react';
+import React from 'react';
 import { Box, Heading, Text, Button, VStack, useColorModeValue } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
@@ -15,7 +15,10 @@ const NotFoundPage: React.FC = () => {
       alignItems="center"
       justifyContent="center"
     >
-      <VStack spacing={2} textAlign="center">
+      <VStack
+        spacing={2}
+        textAlign="center"
+      >
         <motion.div
           animate={{
             y: [0, -20, 0],
@@ -27,7 +30,18 @@ const NotFoundPage: React.FC = () => {
             ease: "easeInOut",
           }}
         >
-          <Box width={{ base: "200px", md: "300px", lg: "400px" }} height={{ base: "200px", md: "300px", lg: "400px" }}>
+          <Box
+            width={{
+              base: "200px",
+              md: "300px",
+              lg: "400px"
+            }}
+            height={{
+              base: "200px",
+              md: "300px",
+              lg: "400px"
+            }}
+          >
             <AstronautSVG color={useColorModeValue("black", "white")} />
           </Box>
         </motion.div>

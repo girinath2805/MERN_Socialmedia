@@ -90,10 +90,21 @@ const ResetPassword = () => {
         p={6}
         my={12}
       >
-        <Heading lineHeight={1.1} fontSize={{ base: '2xl', md: '3xl' }}>
+        <Heading
+          lineHeight={1.1}
+          fontSize={{
+            base: '2xl',
+            md: '3xl'
+          }}
+        >
           Reset Password
         </Heading>
-        <FormControl id="new-password" my={2} isInvalid={!!error} isRequired>
+        <FormControl
+          id="new-password"
+          my={2}
+          isInvalid={!!error}
+          isRequired
+        >
           <Input
             isRequired
             placeholder="New password"

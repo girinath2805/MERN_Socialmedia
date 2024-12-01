@@ -11,6 +11,7 @@ export interface IUser extends Document {
     bio?: string;
     resetPasswordToken?:string;
     resetPasswordExpires?:Date;
+    isFrozen:boolean,
 }
 
 const userSchema: Schema = new mongoose.Schema({
@@ -59,7 +60,11 @@ const userSchema: Schema = new mongoose.Schema({
     },
     resetPasswordExpires:{
         type:Date,
-    }
+    },
+    isFrozen:{
+        type:Boolean,
+        default:false,
+    },
 }, { timestamps: true });
 
 

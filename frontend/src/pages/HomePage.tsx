@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import useShowToast from "../hooks/UseShowToast"
-import { Flex, Text } from "@chakra-ui/react"
+import { Box, Flex, Text } from "@chakra-ui/react"
 import { Triangle } from "react-loader-spinner"
 import Post from "../components/Post"
+import { useRecoilState } from "recoil"
+import postsAtom from "../atoms/postsAtom"
+import SuggestedUsers from "../components/SuggestedUsers"
 
 
 
 const HomePage = () => {
   const { showToast } = useShowToast()
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useRecoilState(postsAtom)
+
   useEffect(() => {
     const getFeedPosts = async () => {
       try {
@@ -22,7 +26,6 @@ const HomePage = () => {
             status: "error",
           })
         } else {
-          console.log(response.data);
           setPosts(response.data);
         }
 
@@ -46,24 +49,44 @@ const HomePage = () => {
     }
 
     getFeedPosts()
-  }, [])
+  }, [setPosts])
 
   return (
-    <>
-      {isLoading ? (
-        <Flex w={'full'} h={'70vh'} justifyContent={'center'} alignItems={'center'}>
-          <Triangle width="full" height="full" color="white" />
-        </Flex>
-      ) : (posts.length == 0 ? (
-        <Text>Follow some users</Text>
-      ) : (
-        <>
-          {posts.map((post, index) => (
-            <Post post={post} key={index}/>
-          ))}
-        </>
-      ))}
-    </>
+    <Flex gap={10} alignItems={"flex-start"}>
+      <Box flex={70}>
+        {isLoading ? (
+          <Flex
+            w={'full'}
+            h={'70vh'}
+            justifyContent={'center'}
+            alignItems={'center'}
+          >
+            <Triangle
+              width="full"
+              height="full"
+              color="white"
+            />
+          </Flex>
+        ) : (posts.length == 0 ? (
+          <Text>Follow some users</Text>
+        ) : (
+          <>
+            {posts.map((post, index) => (
+              <Post post={post} key={index} />
+            ))}
+          </>
+        ))}
+      </Box>
+      <Box
+        flex={30}
+        display={{
+          base: "none",
+          md: "block"
+        }}
+      >
+        <SuggestedUsers />
+      </Box>
+    </Flex>
   )
 }
 

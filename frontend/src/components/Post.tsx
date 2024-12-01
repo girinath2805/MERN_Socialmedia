@@ -4,30 +4,17 @@ import { useEffect, useState } from "react"
 import Actions from "./Actions"
 import useShowToast from "../hooks/UseShowToast"
 import axios from "axios"
-import { IUser } from "../pages/UserPage"
 import { formatDistanceToNow } from "date-fns"
 import { DeleteIcon } from "@chakra-ui/icons"
-import { useRecoilValue } from "recoil"
+import { useRecoilState, useRecoilValue } from "recoil"
 import userAtom from "../atoms/userAtom"
-
-interface IPost {
-    _id: string,
-    createdAt: string,
-    likes: string[],
-    postedBy: string,
-    replies: {
-        userId: string,
-        text: string,
-        userName: string,
-        userProfilePic?: string,
-    }[],
-    text: string,
-    img?: string,
-}
+import postsAtom from "../atoms/postsAtom"
+import { IPost, IUser } from "../types"
 
 const Post = ({ post }: { post: IPost }) => {
     const { showToast } = useShowToast()
     const [user, setUser] = useState<IUser | null>(null);
+    const [posts, setPosts] = useRecoilState(postsAtom)
     const navigate = useNavigate();
     const currentUser = useRecoilValue(userAtom);
 
@@ -67,7 +54,7 @@ const Post = ({ post }: { post: IPost }) => {
 
     const handleDeletePost = async () => {
         try {
-            if(!window.confirm("Are you sure you want to delete the post?")) return;
+            if (!window.confirm("Are you sure you want to delete the post?")) return;
             const response = await axios.delete("/api/posts/" + post._id)
             if (response.data.error) {
                 showToast({
@@ -77,9 +64,10 @@ const Post = ({ post }: { post: IPost }) => {
                 })
             } else {
                 showToast({
-                    description:"Post deleted",
-                    status:"info"
+                    description: "Post deleted",
+                    status: "info"
                 })
+                setPosts(posts.filter((p) => p._id !== post._id))
             }
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -100,7 +88,7 @@ const Post = ({ post }: { post: IPost }) => {
 
 
     return (
-        <Link to={`${user?.userName}/post/${post._id}`}>
+        <Link to={`/${user?.userName}/post/${post._id}`}>
             <Flex gap={3} mb={4} py={5}>
                 <Flex flexDirection={'column'} alignItems={'center'}>
                     <Avatar size='md' name={user?.name} src={user?.profilePic}
@@ -161,8 +149,8 @@ const Post = ({ post }: { post: IPost }) => {
                                 {formatDistanceToNow(new Date(post.createdAt))}
                             </Text>
                             {currentUser?._id === user?._id && (
-                                <Tooltip label="Delete" placement="top" hasArrow bg={"gray.dark"} color={"white"} fontSize={15} 
-                                arrowPadding={10} arrowSize={10} padding={2} openDelay={100} rounded={"xl"} px={5}>
+                                <Tooltip label="Delete" placement="top" hasArrow bg={"gray.dark"} color={"white"} fontSize={15}
+                                    arrowPadding={10} arrowSize={10} padding={2} openDelay={100} rounded={"xl"} px={5}>
                                     <DeleteIcon fontSize={15} color={"red.500"} onClick={(e) => {
                                         e.preventDefault();
                                         handleDeletePost();

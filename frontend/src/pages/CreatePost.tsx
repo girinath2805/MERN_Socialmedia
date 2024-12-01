@@ -1,12 +1,14 @@
 import { AddIcon } from "@chakra-ui/icons"
-import { Button, CloseButton, Flex, FormControl, FormErrorMessage, Image, Input, InputGroup, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Text, Textarea, useColorModeValue, useDisclosure } from "@chakra-ui/react"
+import { Button, CloseButton, Flex, FormControl, FormErrorMessage, Image, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Text, Textarea, useColorModeValue, useDisclosure } from "@chakra-ui/react"
 import { ChangeEvent, useRef, useState } from "react"
 import UsePreviewImg from "../hooks/UsePreviewImg"
 import { BiImageAdd } from "react-icons/bi"
 import axios from "axios"
-import { useRecoilValue } from "recoil"
+import { useRecoilState, useRecoilValue } from "recoil"
 import userAtom from "../atoms/userAtom"
 import useShowToast from "../hooks/UseShowToast"
+import postsAtom from "../atoms/postsAtom"
+import { useParams } from "react-router-dom"
 
 const MAX_CHAR = 500
 
@@ -19,7 +21,11 @@ const CreatePost = () => {
     const [error, setError] = useState<string>("")
     const { handleImgChange, imgUrl, file, setImgUrl, setFile } = UsePreviewImg()
     const imgRef = useRef<HTMLInputElement>(null)
+    const [posts, setPosts] = useRecoilState(postsAtom)
     const [remainingChar, setRemainingChar] = useState<number>(MAX_CHAR)
+    const { username } = useParams()
+
+
     const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         const inputText = e.target.value
         if (inputText.length > MAX_CHAR) {
@@ -58,11 +64,14 @@ const CreatePost = () => {
                     status: "error",
                 })
             } else {
-                console.log(response.data.savedPost);
+                console.log(response.data);
                 showToast({
                     description: "Post created successfully",
                     status: "success"
                 })
+                if (username === user?.userName) {
+                    setPosts([response.data, ...posts])
+                }
                 onClose()
                 setPostText("")
                 setFile(null)
@@ -94,42 +103,61 @@ const CreatePost = () => {
                 position={"fixed"}
                 bottom={10}
                 right={10}
-                leftIcon={<AddIcon />}
                 bg={useColorModeValue("gray.100", "gray.dark")}
-                onClick={onOpen}>
-                Post
+                onClick={onOpen}
+                size={{ base: "sm", sm: "md" }}>
+                <AddIcon />
             </Button>
-            <Modal isOpen={isOpen} onClose={onClose} isCentered motionPreset="slideInBottom">
+            <Modal
+                isOpen={isOpen}
+                onClose={onClose}
+                isCentered
+                motionPreset="slideInBottom"
+            >
                 <ModalOverlay backdropFilter={"blur(3px)"} />
                 <ModalContent bg={"gray.dark"}>
                     <ModalHeader>Create Post</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody pb={6}>
                         <FormControl isInvalid={!!error}>
-                                <Textarea
-                                    placeholder="Post content goes here..."
-                                    onChange={handleTextChange}
-                                    value={postText} />
-                                {error && <FormErrorMessage>{error}</FormErrorMessage>}
-                            <Text fontSize={"xs"} fontWeight={"bold"} textAlign={"right"} m={1} color={"gray.400"}>
+                            <Textarea
+                                placeholder="Post content goes here..."
+                                onChange={handleTextChange}
+                                value={postText} />
+                            {error && <FormErrorMessage>{error}</FormErrorMessage>}
+                            <Text
+                                fontSize={"xs"}
+                                fontWeight={"bold"}
+                                textAlign={"right"}
+                                m={1}
+                                color={"gray.400"}
+                            >
                                 {remainingChar}/{MAX_CHAR}
                             </Text>
                             <Input
                                 type="file"
                                 hidden
                                 ref={imgRef}
-                                onChange={handleImgChange} />
+                                onChange={handleImgChange}
+                            />
                             <BiImageAdd
                                 style={{
                                     marginLeft: "5px",
                                     cursor: "pointer",
                                 }}
                                 fontSize={25}
-                                onClick={() => imgRef.current?.click()} />
+                                onClick={() => imgRef.current?.click()}
+                            />
                         </FormControl>
 
                         {imgUrl && (
-                            <Flex mt={5} w={'full'} position={"relative"} justifyContent={"center"} alignItems={"center"}>
+                            <Flex
+                                mt={5}
+                                w={'full'}
+                                position={"relative"}
+                                justifyContent={"center"}
+                                alignItems={"center"}
+                            >
                                 <Image src={imgUrl} alt="Selected img" />
                                 <CloseButton
                                     onClick={() => {
@@ -139,14 +167,20 @@ const CreatePost = () => {
                                     bg={"gray.800"}
                                     position={"absolute"}
                                     top={2}
-                                    right={2} />
+                                    right={2}
+                                />
                             </Flex>
                         )}
 
                     </ModalBody>
 
                     <ModalFooter>
-                        <Button colorScheme='green' mr={3} onClick={handleCreatePost} isLoading={isLoading}>
+                        <Button
+                            colorScheme='green'
+                            mr={3}
+                            onClick={handleCreatePost}
+                            isLoading={isLoading}
+                        >
                             Post
                         </Button>
                     </ModalFooter>

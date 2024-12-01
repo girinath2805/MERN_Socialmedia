@@ -18,7 +18,7 @@ import axios from 'axios';
 import useShowToast from '../hooks/UseShowToast';
 
 const ForgotPassword = () => {
-  const { showToast } = useShowToast() 
+  const { showToast } = useShowToast()
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const setAuthScreen = useSetRecoilState(authScreenAtom);
@@ -54,8 +54,8 @@ const ForgotPassword = () => {
       } else {
         console.log(response.data);
         showToast({
-          description:"An email has been sent to reset password",
-          status:"success"
+          description: "An email has been sent to reset password",
+          status: "success"
         })
       }
     } catch (error) {
