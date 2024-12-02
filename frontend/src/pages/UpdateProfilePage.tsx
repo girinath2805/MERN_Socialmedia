@@ -32,11 +32,12 @@ const UpdateProfilePage = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [inputs, setInputs] = useState<Inputs>({
-    userName: user?.userName,
-    name: user?.name,
-    email: user?.email,
-    bio: user?.bio,
-    profilePic: user?.profilePic,
+    _id:user?._id ?? "",
+    userName: user?.userName ?? "",
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    bio: user?.bio ?? "",
+    profilePic: user?.profilePic ?? "",
     password: "",
   });
 

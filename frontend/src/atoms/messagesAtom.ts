@@ -1,6 +1,7 @@
 import { atom } from "recoil";
+import { IConversation } from "../types";
 
-export const conversationsAtom = atom({
+export const conversationsAtom = atom<IConversation[]>({
     key:"conversationsAtom",
     default:[],
 })

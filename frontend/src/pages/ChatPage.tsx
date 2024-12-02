@@ -10,7 +10,7 @@ import { useRecoilState, useRecoilValue } from 'recoil'
 import { conversationsAtom, selectedConversationAtom } from '../atoms/messagesAtom'
 import userAtom from '../atoms/userAtom'
 import { useSocket } from '../context/SocketContext'
-import { IConversation } from '../types'
+import { IConversation, IParticipant } from '../types'
 import axiosInstance from '../api/axiosInstance'
 
 const ChatPage = () => {
@@ -104,8 +104,8 @@ const ChatPage = () => {
                     return;
                 }
 
-                const conversationAlreadyExists = conversations.find((conversation: any) => 
-                    conversation.participants.some((participant: any) => participant._id === searchedUser._id)
+                const conversationAlreadyExists = conversations.find((conversation: IConversation) => 
+                    conversation.participants.some((participant: IParticipant) => participant._id === searchedUser._id)
                 );
                 
                 if (conversationAlreadyExists) {
@@ -119,13 +119,14 @@ const ChatPage = () => {
                     return;
                 }
 
-                const mockConversation = {
+                const mockConversation:IConversation = {
                     mock:true,
                     lastMessage:{
                         text:"",
                         sender:"",
+                        seen:false
                     },
-                    _id:Date.now(),
+                    _id:Date.now().toString(),
                     participants:[
                         {
                         _id:searchedUser._id,
