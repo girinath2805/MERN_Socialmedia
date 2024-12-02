@@ -9,6 +9,7 @@ import userAtom from "../atoms/userAtom"
 import useShowToast from "../hooks/UseShowToast"
 import postsAtom from "../atoms/postsAtom"
 import { useParams } from "react-router-dom"
+import axiosInstance from "../api/axiosInstance"
 
 const MAX_CHAR = 500
 
@@ -48,7 +49,7 @@ const CreatePost = () => {
 
         setIsLoading(true)
         try {
-            const response = await axios.post('/api/posts/create', {
+            const response = await axiosInstance.post('/api/posts/create', {
                 postedBy: user?._id,
                 text: postText,
                 post: file

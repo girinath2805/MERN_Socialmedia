@@ -4,12 +4,13 @@ import MessageInput from "./MessageInput"
 import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import useShowToast from "../hooks/UseShowToast"
-import { useRecoilState, useRecoilValue } from "recoil"
+import { useRecoilValue, useSetRecoilState } from "recoil"
 import { conversationsAtom, selectedConversationAtom } from "../atoms/messagesAtom"
 import userAtom from "../atoms/userAtom"
 import { useSocket } from "../context/SocketContext"
 import messageSound from "../assets/sounds/message.mp3"
 import { IMessage } from "../types"
+import axiosInstance from "../api/axiosInstance"
 
 
 const MessageContainer = () => {
@@ -19,7 +20,7 @@ const MessageContainer = () => {
     const [messages, setMessages] = useState<IMessage[]>([]);
     const currentUser = useRecoilValue(userAtom)
     const { socket } = useSocket() || { socket: null, onlineUsers: [] };
-    const [conversations, setConversations] = useRecoilState(conversationsAtom)
+    const setConversations = useSetRecoilState(conversationsAtom)
     const messageEndRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -98,7 +99,7 @@ const MessageContainer = () => {
             try {
                 if (selectedConversation.mock) return;
 
-                const response = await axios.get(`/api/messages/${selectedConversation.userId}`)
+                const response = await axiosInstance.get(`/api/messages/${selectedConversation.userId}`)
                 if (response.data.error) {
                     showToast({
                         title: 'Error',

@@ -6,6 +6,7 @@ import useShowToast from "../hooks/UseShowToast";
 import axios from "axios";
 import postsAtom from "../atoms/postsAtom";
 import { IPost } from "../types";
+import axiosInstance from "../api/axiosInstance";
 
 const MAX_CHAR = 500
 
@@ -47,7 +48,7 @@ const Actions = ({ post }: { post: IPost }) => {
 		setIsLiking(true);
 
 		try {
-			const response = await axios.put(`/api/posts/like/${post._id}`)
+			const response = await axiosInstance.put(`/api/posts/like/${post._id}`)
 			if (response.data.error) {
 				showToast({
 					title: "Error",
@@ -114,7 +115,7 @@ const Actions = ({ post }: { post: IPost }) => {
 		}
 
 		try {
-			const response = await axios.put(`/api/posts/reply/${post._id}`, {
+			const response = await axiosInstance.put(`/api/posts/reply/${post._id}`, {
 				text: replyText
 			})
 

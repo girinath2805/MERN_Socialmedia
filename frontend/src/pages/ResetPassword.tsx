@@ -12,6 +12,7 @@ import {
 import axios from 'axios';
 import useShowToast from '../hooks/UseShowToast';
 import { useNavigate, useParams } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
 
 const ResetPassword = () => {
   const navigate = useNavigate()
@@ -32,7 +33,7 @@ const ResetPassword = () => {
     setIsLoading(true)
     try {
       console.log('Sending new password:', newPassword); // Debug log
-      const response = await axios.post(`/api/users/reset-password/${token}`, { newPassword });
+      const response = await axiosInstance.post(`/api/users/reset-password/${token}`, { newPassword });
 
       if (response.data.error) {
         showToast({

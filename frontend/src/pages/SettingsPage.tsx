@@ -2,6 +2,7 @@ import { Button, Text } from '@chakra-ui/react'
 import useShowToast from '../hooks/UseShowToast';
 import axios from 'axios';
 import useLogout from '../hooks/useLogout';
+import axiosInstance from '../api/axiosInstance';
 
 const SettingsPage = () => {
 
@@ -11,7 +12,7 @@ const SettingsPage = () => {
     const handleFreezeAccount = async () => {
         if (!window.confirm("Are you sure you want to freeze your account?")) return;
         try {
-            const response = await axios.put('/api/users/freeze');
+            const response = await axiosInstance.put('/api/users/freeze');
             if (response.data.error) {
                 showToast({
                     title: 'Error',

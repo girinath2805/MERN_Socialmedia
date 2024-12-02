@@ -3,10 +3,11 @@ import { useRef, useState } from "react"
 import { IoSendSharp } from "react-icons/io5"
 import useShowToast from "../hooks/UseShowToast";
 import axios from "axios";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { conversationsAtom, selectedConversationAtom } from "../atoms/messagesAtom";
 import { BsImageFill } from "react-icons/bs";
 import UsePreviewImg from "../hooks/UsePreviewImg";
+import axiosInstance from "../api/axiosInstance";
 
 interface MessageInputProps {
   setMessages: (messages: any) => void;
@@ -15,7 +16,7 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ setMessages }: MessageInputProps) => {
 
   const selectedConversation = useRecoilValue(selectedConversationAtom)
-  const [conversations, setConversations] = useRecoilState(conversationsAtom)
+  const setConversations = useSetRecoilState(conversationsAtom)
   const [messageText, setMessageText] = useState("");
   const { showToast } = useShowToast();
   const imageRef = useRef<HTMLInputElement>(null);
@@ -31,7 +32,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ setMessages }: MessageInput
     setIsSending(true)
 
     try {
-      const response = await axios.post('/api/messages', {
+      const response = await axiosInstance.post('/api/messages', {
         recipientId: selectedConversation.userId,
         message: messageText,
         img: file,

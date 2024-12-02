@@ -16,6 +16,7 @@ import authScreenAtom from '../atoms/authAtom';
 import { useState } from 'react';
 import axios from 'axios';
 import useShowToast from '../hooks/UseShowToast';
+import axiosInstance from '../api/axiosInstance';
 
 const ForgotPassword = () => {
   const { showToast } = useShowToast()
@@ -44,7 +45,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await axios.post('/api/users/forgot-password', { email })
+      const response = await axiosInstance.post('/api/users/forgot-password', { email })
       if (response.data.error) {
         showToast({
           title: "Error",

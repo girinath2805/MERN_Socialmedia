@@ -10,6 +10,8 @@ import { useRecoilState, useRecoilValue } from 'recoil'
 import { conversationsAtom, selectedConversationAtom } from '../atoms/messagesAtom'
 import userAtom from '../atoms/userAtom'
 import { useSocket } from '../context/SocketContext'
+import { IConversation } from '../types'
+import axiosInstance from '../api/axiosInstance'
 
 const ChatPage = () => {
     const { showToast } = useShowToast();
@@ -44,7 +46,7 @@ const ChatPage = () => {
     useEffect(() => {
         const getConversations = async () => {
             try {
-                const response = await axios.get('/api/messages/conversations');
+                const response = await axiosInstance.get('/api/messages/conversations');
                 if (response.data.error) {
                     showToast({
                         title: 'Error',
@@ -81,7 +83,7 @@ const ChatPage = () => {
         e.preventDefault();
         SetIsSearching(true);
         try {
-            const response = await axios.get(`/api/users/profile/${searchText}`);
+            const response = await axiosInstance.get(`/api/users/profile/${searchText}`);
             if (response.data.error) {
                 showToast({
                   title: 'Error',
@@ -135,7 +137,6 @@ const ChatPage = () => {
 
                 setConversations((prevConv) => {
                     const updatedConversations = [...prevConv, mockConversation];
-                    console.log(updatedConversations);
                     return updatedConversations;
                 })
             }  
@@ -233,7 +234,7 @@ const ChatPage = () => {
                         ))
                     )}
 
-                    {!isLoading && conversations && conversations.map(conversation => (
+                    {!isLoading && conversations && conversations.map((conversation:IConversation) => (
                         <Conversation 
                         key={conversation._id} 
                         isOnline={onlineUsers.includes(conversation.participants[0]._id)}

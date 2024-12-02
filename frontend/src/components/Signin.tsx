@@ -22,6 +22,7 @@ import useShowToast from '../hooks/UseShowToast'
 import axios from 'axios'
 import userAtom from '../atoms/userAtom'
 import Header from './Header'
+import axiosInstance from '../api/axiosInstance'
 
 interface Errors {
   userName?: string;
@@ -54,7 +55,7 @@ const Signin = () => {
     }
     setIsLoading(true)
     try {
-      const response = await axios.post('/api/users/signin', {
+      const response = await axiosInstance.post('/api/users/signin', {
         userName,
         password
       })

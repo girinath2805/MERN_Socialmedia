@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom';
 import useShowToast from './UseShowToast';
 import { IUser } from '../types';
+import axiosInstance from '../api/axiosInstance';
 
 const useGetUserProfile = () => {
   const [user, setUser] = useState<IUser | null>(null)
@@ -14,7 +15,7 @@ const useGetUserProfile = () => {
     const getUser = async() => {
         setIsLoading(true)
         try {
-            const response = await axios.get(`/api/users/profile/${username}`)
+            const response = await axiosInstance.get(`/api/users/profile/${username}`)
             if (response.data.error) {
                 showToast({
                     title: "Error",

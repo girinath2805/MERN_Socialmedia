@@ -7,6 +7,7 @@ import Post from "../components/Post"
 import { useRecoilState } from "recoil"
 import postsAtom from "../atoms/postsAtom"
 import SuggestedUsers from "../components/SuggestedUsers"
+import axiosInstance from "../api/axiosInstance"
 
 
 
@@ -18,7 +19,7 @@ const HomePage = () => {
   useEffect(() => {
     const getFeedPosts = async () => {
       try {
-        const response = await axios.get('/api/posts/feed/')
+        const response = await axiosInstance.get('/api/posts/feed/')
         if (response.data.error) {
           showToast({
             title: "Error",

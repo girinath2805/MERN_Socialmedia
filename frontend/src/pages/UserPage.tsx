@@ -10,6 +10,7 @@ import Post from "../components/Post"
 import { useRecoilState } from "recoil"
 import postsAtom from "../atoms/postsAtom"
 import { IUser, IPost } from "../types"
+import axiosInstance from "../api/axiosInstance"
 
 const UserPage = () => {
   const [user, setUser] = useState<IUser | null>(null)
@@ -22,7 +23,7 @@ const UserPage = () => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const response = await axios.get(`/api/users/profile/${username}`)
+        const response = await axiosInstance.get(`/api/users/profile/${username}`)
         if (response.data.error) {
           showToast({
             title: 'Error',
@@ -59,7 +60,7 @@ const UserPage = () => {
     const getPosts = async (userName: string) => {
       setIsFetching(true);
       try {
-        const response = await axios.get("/api/posts/user/" + userName)
+        const response = await axiosInstance.get("/api/posts/user/" + userName)
         if (response.data.error) {
           showToast({
             title: 'Error',

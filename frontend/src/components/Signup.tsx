@@ -23,6 +23,7 @@ import axios from 'axios';
 import useShowToast from '../hooks/UseShowToast';
 import userAtom from '../atoms/userAtom';
 import Header from './Header';
+import axiosInstance from '../api/axiosInstance';
 
 interface Errors {
   name?: string;
@@ -83,7 +84,7 @@ const Signup: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/users/signup", {
+      const response = await axiosInstance.post("/api/users/signup", {
         name,
         userName,
         email,

@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useRecoilState, useRecoilValue } from "recoil";
 import postsAtom from "../atoms/postsAtom";
 import { IReply } from "../types";
+import axiosInstance from "../api/axiosInstance";
 
 
 const PostPage = () => {
@@ -29,7 +30,7 @@ const PostPage = () => {
     const getPost = async () => {
       setPosts([]);
       try {
-        const response = await axios.get(`/api/posts/${pid}`);
+        const response = await axiosInstance.get(`/api/posts/${pid}`);
         if (response.data.error) {
           showToast({
             title: 'Error',
@@ -62,7 +63,7 @@ const PostPage = () => {
   const handleDeletePost = async () => {
     try {
       if (!window.confirm("Are you sure you want to delete the post?")) return;
-      const response = await axios.delete("/api/posts/" + currentPost._id)
+      const response = await axiosInstance.delete("/api/posts/" + currentPost._id)
       if (response.data.error) {
         showToast({
           title: "Error",

@@ -4,6 +4,7 @@ import SuggestedUser from './SuggestedUser'
 import useShowToast from '../hooks/UseShowToast'
 import axios from 'axios'
 import { IUser } from '../types'
+import axiosInstance from '../api/axiosInstance'
 
 const SuggestedUsers = () => {
 
@@ -14,7 +15,7 @@ const SuggestedUsers = () => {
     useEffect(() => {
         const getSuggestedUsers = async () => {
             try {
-                const response = await axios.get("/api/users/suggested");
+                const response = await axiosInstance.get("/api/users/suggested");
                 if (response.data.error) {
                     showToast({
                         title: 'Error',

@@ -2,6 +2,7 @@ import { useSetRecoilState } from 'recoil';
 import userAtom from '../atoms/userAtom';
 import useShowToast from './UseShowToast';
 import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const useLogout = () => {
 
@@ -10,7 +11,7 @@ const useLogout = () => {
     
     const handleLogout = async () => {
         try {
-          const response = await axios.post("/api/users/signout");
+          const response = await axiosInstance.post("/api/users/signout");
           if (response.data.error) {
             showToast({
               title: "Error",
@@ -18,7 +19,6 @@ const useLogout = () => {
               status: "error",
             });
           } else {
-            console.log(response.data);
             localStorage.removeItem("user-threads");
             setUser(null);
             showToast({

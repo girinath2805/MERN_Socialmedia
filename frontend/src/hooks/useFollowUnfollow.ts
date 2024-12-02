@@ -5,8 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 import axios from "axios"
 import { IUser } from "../types"
-
-
+import axiosInstance from "../api/axiosInstance"
 
 const useFollowUnfollow = (user:IUser) => {
 
@@ -14,7 +13,7 @@ const useFollowUnfollow = (user:IUser) => {
     const { showToast } = useShowToast()
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-    const [following, setFollowing] = useState(currentUser ? user?.followers.includes(currentUser._id) : false);
+    const [following, setFollowing] = useState(currentUser ? user?.followers?.includes(currentUser._id) : false);
 
     const handleFollowUnfollow = async () => {
         if (!currentUser) {
@@ -32,7 +31,7 @@ const useFollowUnfollow = (user:IUser) => {
 
         setIsLoading(true)
         try {
-            const response = await axios.post(`/api/users/follow/${user?._id}`)
+            const response = await axiosInstance.post(`/api/users/follow/${user?._id}`)
 
             if (response.data.error) {
                 showToast({
@@ -43,11 +42,11 @@ const useFollowUnfollow = (user:IUser) => {
             } else {
                 if (following) {
                     showToast({ description: `Unfollowed ${user?.name}`, status: "success" })
-                    user?.followers.pop()
+                    user?.followers?.pop()
                 }
                 else {
                     showToast({ description: `Following ${user?.name}`, status: "success" })
-                    user?.followers.push(currentUser?._id)
+                    user?.followers?.push(currentUser?._id)
                 }
                 setFollowing(!following)
             }

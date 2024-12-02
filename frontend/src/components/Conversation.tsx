@@ -83,17 +83,20 @@ const Conversation = ({ conversation, isOnline }: ConversationProps) => {
                             <BsCheck2All size={16} />
                         </Box>
                     ) : null}
-                    {lastMessage.text.length > 0 ? (
-                        lastMessage.text.length > 18 ? (
-                            lastMessage.text.substring(0, 18) + "...") : (
-                            lastMessage.text
+                    {lastMessage.sender.length > 0 ? (
+                        lastMessage.text.length > 0 ? (
+                            lastMessage.text.length > 18 ? (
+                                lastMessage.text.substring(0, 18) + "..."
+                            ) : (
+                                lastMessage.text
+                            )
+                        ) : (
+                            <>
+                                <BsImageFill size={10} />
+                                Image
+                            </>
                         )
-                    ) : (
-                        <>
-                            <BsImageFill size={10} />
-                            Image
-                        </>
-                    )}
+                    ) : null}
                 </Text>
             </Stack>
         </Flex>

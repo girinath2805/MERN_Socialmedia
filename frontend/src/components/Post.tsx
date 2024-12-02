@@ -10,6 +10,7 @@ import { useRecoilState, useRecoilValue } from "recoil"
 import userAtom from "../atoms/userAtom"
 import postsAtom from "../atoms/postsAtom"
 import { IPost, IUser } from "../types"
+import axiosInstance from "../api/axiosInstance"
 
 const Post = ({ post }: { post: IPost }) => {
     const { showToast } = useShowToast()
@@ -21,7 +22,7 @@ const Post = ({ post }: { post: IPost }) => {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const response = await axios.get(`/api/users/profile/${post.postedBy}`)
+                const response = await axiosInstance.get(`/api/users/profile/${post.postedBy}`)
                 if (response.data.error) {
                     showToast({
                         title: "Error",
@@ -55,7 +56,7 @@ const Post = ({ post }: { post: IPost }) => {
     const handleDeletePost = async () => {
         try {
             if (!window.confirm("Are you sure you want to delete the post?")) return;
-            const response = await axios.delete("/api/posts/" + post._id)
+            const response = await axiosInstance.delete("/api/posts/" + post._id)
             if (response.data.error) {
                 showToast({
                     title: "Error",

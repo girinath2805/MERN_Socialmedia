@@ -20,6 +20,7 @@ import useShowToast from '../hooks/UseShowToast'
 import axios from 'axios'
 import { IUser } from '../types'
 import userAtom from '../atoms/userAtom'
+import axiosInstance from '../api/axiosInstance'
 
 interface Inputs extends IUser {
   password?: string,
@@ -58,7 +59,7 @@ const UpdateProfilePage = () => {
     setIsLoading(true)
 
     try {
-      const response = await axios.put('/api/users/update', formData, {
+      const response = await axiosInstance.put('/api/users/update', formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

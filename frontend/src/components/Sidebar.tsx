@@ -45,7 +45,7 @@ const LinkItems: Array<LinkItemProps> = [
 ]
 
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
-    const { colorMode, toggleColorMode } = useColorMode()
+    const { toggleColorMode } = useColorMode()
     return (
         <Box
             bg={useColorModeValue("white", "black")}
