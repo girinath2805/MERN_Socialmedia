@@ -13,7 +13,7 @@ const generateTokenAndSetCookie = (userId: mongoose.Schema.Types.ObjectId, res: 
         res.cookie("token", token, {
             httpOnly: true, // This makes it not accessible for the browser to make it secure
             maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
-            sameSite: "lax", // CSRF
+            sameSite: "none", // CSRF
             secure:process.env.NODE_ENV === 'production',
         })
 
