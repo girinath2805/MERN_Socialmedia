@@ -1,9 +1,10 @@
-import cron from "cron";
+import { CronJob } from "cron";
 import https from "https";
 
-const URL = "https://threads-clone-9if3.onrender.com";
+const backendUrl = process.env.BACKEND_URL || ""
+const URL = backendUrl;
 
-const job = new cron.CronJob("*/14 * * * *", function () {
+const job = new CronJob("*/14 * * * *", function () {
 	https
 		.get(URL, (res) => {
 			if (res.statusCode === 200) {
